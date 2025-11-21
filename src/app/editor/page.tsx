@@ -280,7 +280,11 @@ export default function EditorPage() {
                   transformOrigin: "top center",
                 }}
               >
-                <A4Preview content={content} onPageChange={setCurrentPage} orientation={orientation} />
+                <A4Preview 
+                content={content} 
+                onPageChange={setCurrentPage} 
+                // orientation={orientation} 
+                />
               </div>
             </div>
           </TabsContent>

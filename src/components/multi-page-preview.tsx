@@ -59,7 +59,7 @@ export function MultiPagePreview({ content, onPageChange }: MultiPagePreviewProp
           <div className="p-16 h-full overflow-hidden">
             <ReactMarkdown
               remarkPlugins={[remarkGfm]}
-              className="prose prose-sm max-w-none font-serif"
+              // className="prose prose-sm max-w-none font-serif"
               components={{
                 h1: ({ node, ...props }) => (
                   <h1 className="text-3xl font-bold mb-6 text-gray-900 font-serif" {...props} />
