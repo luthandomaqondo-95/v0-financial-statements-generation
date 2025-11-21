@@ -12,6 +12,7 @@ import Link from "next/link"
 import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { cn } from "@/lib/utils"
 
 // Dynamically import the editor to avoid SSR issues
 const Editor = dynamic(() => import("@/components/mdx-editor"), {
@@ -126,6 +127,7 @@ export default function EditorPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [zoom, setZoom] = useState("100")
   const [activeTab, setActiveTab] = useState("edit")
+  const [orientation, setOrientation] = useState<"portrait" | "landscape">("portrait")
 
   const handleAIGenerate = (markdown: string) => {
     setContent(markdown)
@@ -189,6 +191,21 @@ export default function EditorPage() {
               </TabsTrigger>
             </TabsList>
 
+            {activeTab === "edit" && (
+              <div className="flex items-center gap-3 py-2">
+                <Tabs value={orientation} onValueChange={(v) => setOrientation(v as "portrait" | "landscape")}>
+                  <TabsList className="h-8">
+                    <TabsTrigger value="portrait" className="text-xs px-3 h-6">
+                      Portrait
+                    </TabsTrigger>
+                    <TabsTrigger value="landscape" className="text-xs px-3 h-6">
+                      Landscape
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </div>
+            )}
+
             {activeTab === "preview" && (
               <div className="flex items-center gap-3 py-2">
                 <div className="flex items-center gap-2">
@@ -236,8 +253,15 @@ export default function EditorPage() {
             value="edit"
             className="flex-1 mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
           >
-            <div className="h-full p-4 bg-muted/10">
-              <Editor markdown={content} onChange={setContent} />
+            <div className="h-full bg-muted/10 overflow-auto flex justify-center p-8">
+              <Editor
+                markdown={content}
+                onChange={setContent}
+                className={cn(
+                  "bg-background shadow-lg transition-all duration-300",
+                  orientation === "portrait" ? "w-[210mm] h-[297mm]" : "w-[297mm] h-[210mm]",
+                )}
+              />
             </div>
           </TabsContent>
 
@@ -253,7 +277,7 @@ export default function EditorPage() {
                   transformOrigin: "top center",
                 }}
               >
-                <A4Preview content={content} onPageChange={setCurrentPage} />
+                <A4Preview content={content} onPageChange={setCurrentPage} orientation={orientation} />
               </div>
             </div>
           </TabsContent>
