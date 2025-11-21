@@ -1,26 +1,17 @@
 "use client"
 
-import { useState } from "react"
-import dynamic from "next/dynamic"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import { A4Preview } from "@/components/a4-preview"
 import { AIGenerationDialog } from "@/components/ai-generation-dialog"
 import { PDFExport } from "@/components/pdf-export"
 import { FinancialTemplates } from "@/components/financial-templates"
-import { Save, FileText, ChevronLeft, ZoomIn, ZoomOut, Eye, Edit } from "lucide-react"
+import { Save, FileText, ChevronLeft, ZoomIn, ZoomOut, Eye, Edit, Plus } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { cn } from "@/lib/utils"
-
-// Dynamically import the editor to avoid SSR issues
-const Editor = dynamic(() => import("@/components/mdx-editor"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-full w-full flex items-center justify-center text-muted-foreground">Loading editor...</div>
-  ),
-})
+import { PageEditor } from "@/components/page-editor"
 
 const defaultContent = `# Annual Financial Statement 2024
 
@@ -123,26 +114,63 @@ Date: March 15, 2025
 `
 
 export default function EditorPage() {
-  const [content, setContent] = useState(defaultContent)
+  // Initialize pages by splitting the default content
+  // We use a regex to handle potential variations in line breaks around the separator
+  const [pages, setPages] = useState<string[]>(() => {
+    return defaultContent.split(/\n---\n/).map((p) => p.trim())
+  })
+
   const [currentPage, setCurrentPage] = useState(1)
   const [zoom, setZoom] = useState("100")
   const [activeTab, setActiveTab] = useState("edit")
   const [orientation, setOrientation] = useState<"portrait" | "landscape">("portrait")
 
+  // Computed full content for preview/export
+  const fullContent = useMemo(() => pages.join("\n\n---\n\n"), [pages])
+
   const handleAIGenerate = (markdown: string) => {
-    setContent(markdown)
+    const newPages = markdown.split(/\n---\n/).map((p) => p.trim())
+    setPages(newPages)
     toast.success("Content updated with AI-generated statement")
   }
 
   const handleTemplateSelect = (templateContent: string) => {
-    setContent(templateContent)
+    const newPages = templateContent.split(/\n---\n/).map((p) => p.trim())
+    setPages(newPages)
     toast.success("Template loaded successfully")
   }
 
   const handleSave = () => {
     // In production, this would save to a database
-    localStorage.setItem("afs-draft", content)
+    localStorage.setItem("afs-draft", fullContent)
     toast.success("Draft saved successfully!")
+  }
+
+  const updatePage = (index: number, content: string) => {
+    setPages((prev) => {
+      const newPages = [...prev]
+      newPages[index] = content
+      return newPages
+    })
+  }
+
+  const addPage = (index: number) => {
+    setPages((prev) => {
+      const newPages = [...prev]
+      // Insert empty page after current index
+      newPages.splice(index + 1, 0, "")
+      return newPages
+    })
+    toast.success("New page added")
+  }
+
+  const deletePage = (index: number) => {
+    if (pages.length <= 1) {
+      toast.error("Cannot delete the last page")
+      return
+    }
+    setPages((prev) => prev.filter((_, i) => i !== index))
+    toast.success("Page deleted")
   }
 
   return (
@@ -166,7 +194,7 @@ export default function EditorPage() {
             <Save className="h-4 w-4" />
             Save
           </Button>
-          <PDFExport content={content} />
+          <PDFExport content={fullContent} />
         </div>
       </header>
 
@@ -251,19 +279,30 @@ export default function EditorPage() {
             value="edit"
             className="flex-1 mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
           >
-            <div className="h-full overflow-auto p-8 bg-muted/10 flex justify-center items-start">
-              <div
-                className={cn(
-                  "bg-background shadow-lg transition-all duration-300 relative shrink-0",
-                  orientation === "portrait" ? "w-[210mm] min-h-[297mm]" : "w-[297mm] min-h-[210mm]",
-                )}
-              >
-                <Editor
-                  markdown={content}
-                  onChange={setContent}
-                  containerClassName="border-none h-full bg-transparent"
-                  contentEditableClassName="prose dark:prose-invert max-w-none p-[20mm] min-h-full outline-none"
-                />
+            <div className="h-full overflow-auto bg-muted/10 relative">
+              <div className="flex flex-col items-center py-8 min-h-full">
+                {pages.map((pageContent, index) => (
+                  <PageEditor
+                    key={index}
+                    pageNumber={index + 1}
+                    totalPages={pages.length}
+                    content={pageContent}
+                    onChange={(content) => updatePage(index, content)}
+                    onAddNext={() => addPage(index)}
+                    onDelete={() => deletePage(index)}
+                    orientation={orientation}
+                  />
+                ))}
+
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="mt-4 mb-12 gap-2 border-dashed bg-transparent"
+                  onClick={() => addPage(pages.length - 1)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add New Page
+                </Button>
               </div>
             </div>
           </TabsContent>
@@ -280,11 +319,7 @@ export default function EditorPage() {
                   transformOrigin: "top center",
                 }}
               >
-                <A4Preview 
-                content={content} 
-                onPageChange={setCurrentPage} 
-                // orientation={orientation} 
-                />
+                <A4Preview content={fullContent} onPageChange={setCurrentPage} />
               </div>
             </div>
           </TabsContent>
