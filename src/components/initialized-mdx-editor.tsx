@@ -27,17 +27,17 @@ import { cn } from "@/lib/utils"
 // Only import this to the next file
 export default function InitializedMDXEditor({
   editorRef,
-  className,
+  containerClassName,
   ...props
-}: { editorRef: ForwardedRef<MDXEditorMethods> | null } & MDXEditorProps) {
+}: { editorRef: ForwardedRef<MDXEditorMethods> | null; containerClassName?: string } & MDXEditorProps) {
   const { theme } = useTheme()
 
   return (
     <div
       className={cn(
-        "mdx-editor-wrapper border rounded-md overflow-hidden bg-background",
+        "mdx-editor-wrapper h-full border rounded-md overflow-hidden bg-background",
         theme === "dark" ? "dark-theme" : "",
-        className,
+        containerClassName,
       )}
     >
       <MDXEditor
@@ -70,7 +70,7 @@ export default function InitializedMDXEditor({
         {...props}
         ref={editorRef}
         className="h-full"
-        contentEditableClassName="prose dark:prose-invert max-w-none p-8 h-full overflow-auto outline-none"
+        contentEditableClassName="prose dark:prose-invert max-w-none p-4 h-full overflow-auto outline-none"
       />
     </div>
   )
