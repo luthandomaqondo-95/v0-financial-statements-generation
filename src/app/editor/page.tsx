@@ -114,217 +114,217 @@ Date: March 15, 2025
 `
 
 export default function EditorPage() {
-  // Initialize pages by splitting the default content
-  // We use a regex to handle potential variations in line breaks around the separator
-  const [pages, setPages] = useState<string[]>(() => {
-    return defaultContent.split(/\n---\n/).map((p) => p.trim())
-  })
+	// Initialize pages by splitting the default content
+	// We use a regex to handle potential variations in line breaks around the separator
+	const [pages, setPages] = useState<string[]>(() => {
+		return defaultContent.split(/\n---\n/).map((p) => p.trim())
+	})
 
-  const [currentPage, setCurrentPage] = useState(1)
-  const [zoom, setZoom] = useState("100")
-  const [activeTab, setActiveTab] = useState("edit")
-  const [orientation, setOrientation] = useState<"portrait" | "landscape">("portrait")
+	const [currentPage, setCurrentPage] = useState(1)
+	const [zoom, setZoom] = useState("100")
+	const [activeTab, setActiveTab] = useState("edit")
+	const [orientation, setOrientation] = useState<"portrait" | "landscape">("portrait")
 
-  // Computed full content for preview/export
-  const fullContent = useMemo(() => pages.join("\n\n---\n\n"), [pages])
+	// Computed full content for preview/export
+	const fullContent = useMemo(() => pages.join("\n\n---\n\n"), [pages])
 
-  const handleAIGenerate = (markdown: string) => {
-    const newPages = markdown.split(/\n---\n/).map((p) => p.trim())
-    setPages(newPages)
-    toast.success("Content updated with AI-generated statement")
-  }
+	const handleAIGenerate = (markdown: string) => {
+		const newPages = markdown.split(/\n---\n/).map((p) => p.trim())
+		setPages(newPages)
+		toast.success("Content updated with AI-generated statement")
+	}
 
-  const handleTemplateSelect = (templateContent: string) => {
-    const newPages = templateContent.split(/\n---\n/).map((p) => p.trim())
-    setPages(newPages)
-    toast.success("Template loaded successfully")
-  }
+	const handleTemplateSelect = (templateContent: string) => {
+		const newPages = templateContent.split(/\n---\n/).map((p) => p.trim())
+		setPages(newPages)
+		toast.success("Template loaded successfully")
+	}
 
-  const handleSave = () => {
-    // In production, this would save to a database
-    localStorage.setItem("afs-draft", fullContent)
-    toast.success("Draft saved successfully!")
-  }
+	const handleSave = () => {
+		// In production, this would save to a database
+		localStorage.setItem("afs-draft", fullContent)
+		toast.success("Draft saved successfully!")
+	}
 
-  const updatePage = (index: number, content: string) => {
-    setPages((prev) => {
-      const newPages = [...prev]
-      newPages[index] = content
-      return newPages
-    })
-  }
+	const updatePage = (index: number, content: string) => {
+		setPages((prev) => {
+			const newPages = [...prev]
+			newPages[index] = content
+			return newPages
+		})
+	}
 
-  const addPage = (index: number) => {
-    setPages((prev) => {
-      const newPages = [...prev]
-      // Insert empty page after current index
-      newPages.splice(index + 1, 0, "")
-      return newPages
-    })
-    toast.success("New page added")
-  }
+	const addPage = (index: number) => {
+		setPages((prev) => {
+			const newPages = [...prev]
+			// Insert empty page after current index
+			newPages.splice(index + 1, 0, "")
+			return newPages
+		})
+		toast.success("New page added")
+	}
 
-  const deletePage = (index: number) => {
-    if (pages.length <= 1) {
-      toast.error("Cannot delete the last page")
-      return
-    }
-    setPages((prev) => prev.filter((_, i) => i !== index))
-    toast.success("Page deleted")
-  }
+	const deletePage = (index: number) => {
+		if (pages.length <= 1) {
+			toast.error("Cannot delete the last page")
+			return
+		}
+		setPages((prev) => prev.filter((_, i) => i !== index))
+		toast.success("Page deleted")
+	}
 
-  return (
-    <div className="h-screen flex flex-col bg-background">
-      {/* Header */}
-      <header className="flex h-14 items-center gap-4 border-b bg-background px-4 shrink-0">
-        <Link href="/">
-          <Button variant="ghost" size="sm" className="gap-2">
-            <ChevronLeft className="h-4 w-4" />
-            Back
-          </Button>
-        </Link>
-        <div className="flex items-center gap-2">
-          <FileText className="h-5 w-5 text-muted-foreground" />
-          <span className="font-medium">Annual Financial Statement 2024</span>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <FinancialTemplates onSelectTemplate={handleTemplateSelect} />
-          <AIGenerationDialog onGenerate={handleAIGenerate} />
-          <Button variant="outline" size="sm" className="gap-2 bg-transparent" onClick={handleSave}>
-            <Save className="h-4 w-4" />
-            Save
-          </Button>
-          <PDFExport content={fullContent} />
-        </div>
-      </header>
+	return (
+		<div className="h-screen flex flex-col bg-background">
+			{/* Header */}
+			<header className="flex h-14 items-center gap-4 border-b bg-background px-4 shrink-0">
+				<Link href="/">
+					<Button variant="ghost" size="sm" className="gap-2">
+						<ChevronLeft className="h-4 w-4" />
+						Back
+					</Button>
+				</Link>
+				<div className="flex items-center gap-2">
+					<FileText className="h-5 w-5 text-muted-foreground" />
+					<span className="font-medium">Annual Financial Statement 2024</span>
+				</div>
+				<div className="ml-auto flex items-center gap-2">
+					<FinancialTemplates onSelectTemplate={handleTemplateSelect} />
+					<AIGenerationDialog onGenerate={handleAIGenerate} />
+					<Button variant="outline" size="sm" className="gap-2 bg-transparent" onClick={handleSave}>
+						<Save className="h-4 w-4" />
+						Save
+					</Button>
+					<PDFExport content={fullContent} />
+				</div>
+			</header>
 
-      {/* Main Content */}
-      <div className="flex-1 overflow-hidden">
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-          <div className="border-b px-4 bg-muted/30 flex items-center justify-between shrink-0">
-            <TabsList className="h-12 bg-transparent p-0 gap-6">
-              <TabsTrigger
-                value="edit"
-                className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2"
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Editor
-              </TabsTrigger>
-              <TabsTrigger
-                value="preview"
-                className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2"
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Preview
-              </TabsTrigger>
-            </TabsList>
+			{/* Main Content */}
+			<div className="flex-1 overflow-hidden">
+				<Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+					<div className="border-b px-4 bg-muted/30 flex items-center justify-between shrink-0">
+						<TabsList className="h-12 bg-transparent p-0 gap-6">
+							<TabsTrigger
+								value="edit"
+								className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2"
+							>
+								<Edit className="h-4 w-4 mr-2" />
+								Editor
+							</TabsTrigger>
+							<TabsTrigger
+								value="preview"
+								className="h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2"
+							>
+								<Eye className="h-4 w-4 mr-2" />
+								Preview
+							</TabsTrigger>
+						</TabsList>
 
-            {activeTab === "edit" && (
-              <Tabs value={orientation} onValueChange={(v) => setOrientation(v as "portrait" | "landscape")}>
-                <TabsList className="h-9">
-                  <TabsTrigger value="portrait" className="text-xs">
-                    Portrait
-                  </TabsTrigger>
-                  <TabsTrigger value="landscape" className="text-xs">
-                    Landscape
-                  </TabsTrigger>
-                </TabsList>
-              </Tabs>
-            )}
+						{activeTab === "edit" && (
+							<Tabs value={orientation} onValueChange={(v) => setOrientation(v as "portrait" | "landscape")}>
+								<TabsList className="h-9">
+									<TabsTrigger value="portrait" className="text-xs">
+										Portrait
+									</TabsTrigger>
+									<TabsTrigger value="landscape" className="text-xs">
+										Landscape
+									</TabsTrigger>
+								</TabsList>
+							</Tabs>
+						)}
 
-            {activeTab === "preview" && (
-              <div className="flex items-center gap-3 py-2">
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => {
-                      const newZoom = Math.max(50, Number.parseInt(zoom) - 25).toString()
-                      setZoom(newZoom)
-                    }}
-                  >
-                    <ZoomOut className="h-4 w-4" />
-                  </Button>
-                  <Select value={zoom} onValueChange={setZoom}>
-                    <SelectTrigger className="w-20 h-7 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="50">50%</SelectItem>
-                      <SelectItem value="75">75%</SelectItem>
-                      <SelectItem value="100">100%</SelectItem>
-                      <SelectItem value="125">125%</SelectItem>
-                      <SelectItem value="150">150%</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-7 w-7"
-                    onClick={() => {
-                      const newZoom = Math.min(200, Number.parseInt(zoom) + 25).toString()
-                      setZoom(newZoom)
-                    }}
-                  >
-                    <ZoomIn className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="text-xs text-muted-foreground">Page {currentPage}</div>
-              </div>
-            )}
-          </div>
+						{activeTab === "preview" && (
+							<div className="flex items-center gap-3 py-2">
+								<div className="flex items-center gap-2">
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-7 w-7"
+										onClick={() => {
+											const newZoom = Math.max(50, Number.parseInt(zoom) - 25).toString()
+											setZoom(newZoom)
+										}}
+									>
+										<ZoomOut className="h-4 w-4" />
+									</Button>
+									<Select value={zoom} onValueChange={setZoom}>
+										<SelectTrigger className="w-20 h-7 text-xs">
+											<SelectValue />
+										</SelectTrigger>
+										<SelectContent>
+											<SelectItem value="50">50%</SelectItem>
+											<SelectItem value="75">75%</SelectItem>
+											<SelectItem value="100">100%</SelectItem>
+											<SelectItem value="125">125%</SelectItem>
+											<SelectItem value="150">150%</SelectItem>
+										</SelectContent>
+									</Select>
+									<Button
+										variant="ghost"
+										size="icon"
+										className="h-7 w-7"
+										onClick={() => {
+											const newZoom = Math.min(200, Number.parseInt(zoom) + 25).toString()
+											setZoom(newZoom)
+										}}
+									>
+										<ZoomIn className="h-4 w-4" />
+									</Button>
+								</div>
+								<div className="text-xs text-muted-foreground">Page {currentPage}</div>
+							</div>
+						)}
+					</div>
 
-          <TabsContent
-            value="edit"
-            className="flex-1 mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
-          >
-            <div className="h-full overflow-auto bg-muted/10 relative">
-              <div className="flex flex-col items-center py-8 min-h-full">
-                {pages.map((pageContent, index) => (
-                  <PageEditor
-                    key={index}
-                    pageNumber={index + 1}
-                    totalPages={pages.length}
-                    content={pageContent}
-                    onChange={(content) => updatePage(index, content)}
-                    onAddNext={() => addPage(index)}
-                    onDelete={() => deletePage(index)}
-                    orientation={orientation}
-                  />
-                ))}
+					<TabsContent
+						value="edit"
+						className="flex-1 mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
+					>
+						<div className="h-full overflow-auto bg-muted/10 relative">
+							<div className="flex flex-col items-center py-8 min-h-full">
+								{pages.map((pageContent, index) => (
+									<PageEditor
+										key={index}
+										pageNumber={index + 1}
+										totalPages={pages.length}
+										content={pageContent}
+										onChange={(content) => updatePage(index, content)}
+										onAddNext={() => addPage(index)}
+										onDelete={() => deletePage(index)}
+										orientation={orientation}
+									/>
+								))}
 
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="mt-4 mb-12 gap-2 border-dashed bg-transparent"
-                  onClick={() => addPage(pages.length - 1)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add New Page
-                </Button>
-              </div>
-            </div>
-          </TabsContent>
+								<Button
+									variant="outline"
+									size="lg"
+									className="mt-4 mb-12 gap-2 border-dashed bg-transparent"
+									onClick={() => addPage(pages.length - 1)}
+								>
+									<Plus className="h-4 w-4" />
+									Add New Page
+								</Button>
+							</div>
+						</div>
+					</TabsContent>
 
-          <TabsContent
-            value="preview"
-            className="flex-1 mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
-          >
-            <div className="h-full flex flex-col bg-muted/20">
-              <div
-                className="flex-1 overflow-auto p-6"
-                style={{
-                  transform: `scale(${Number.parseInt(zoom) / 100})`,
-                  transformOrigin: "top center",
-                }}
-              >
-                <A4Preview content={fullContent} onPageChange={setCurrentPage} />
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
-      </div>
-    </div>
-  )
+					<TabsContent
+						value="preview"
+						className="flex-1 mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
+					>
+						<div className="h-full flex flex-col bg-muted/20">
+							<div
+								className="flex-1 overflow-auto p-6"
+								style={{
+									transform: `scale(${Number.parseInt(zoom) / 100})`,
+									transformOrigin: "top center",
+								}}
+							>
+								<A4Preview content={fullContent} onPageChange={setCurrentPage} />
+							</div>
+						</div>
+					</TabsContent>
+				</Tabs>
+			</div>
+		</div>
+	)
 }

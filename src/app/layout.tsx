@@ -4,9 +4,8 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
-import "./globals.css"
-// Removed direct import of style.css to move it to globals.css to avoid MIME type issues
-// import "@mdxeditor/editor/style.css"
+import "@/styles/globals.css"
+import "@mdxeditor/editor/style.css"
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -31,9 +30,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <head>
+      {/* <head>
         <link rel="stylesheet" href="https://unpkg.com/@mdxeditor/editor@3.11.2/style.css" />
-      </head>
+      </head> */}
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           {children}
