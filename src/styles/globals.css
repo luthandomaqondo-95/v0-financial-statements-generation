@@ -123,3 +123,127 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* MDX Editor - Force Light Mode for Paper/Page */
+.mdx-editor-wrapper {
+  /* Remove dark mode styling from the editor */
+  color-scheme: light !important;
+}
+
+.mdx-editor-wrapper .mdxeditor {
+  background: white !important;
+  color: #1f2937 !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-toolbar {
+  background: #f9fafb !important;
+  border-bottom: 1px solid #e5e7eb !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+}
+
+/* Page editor specific - make toolbar sticky within page container */
+.page-editor-container {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+/* The wrapper passes through height to mdxeditor */
+.page-editor-mdx {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+  overflow: hidden !important;
+}
+
+/* MDXEditor is the scroll container - both toolbar and content inside */
+.page-editor-mdx .mdxeditor {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}
+
+/* Toolbar sticks to top of the mdxeditor scroll container */
+.page-editor-mdx .mdxeditor-toolbar {
+  flex-shrink: 0 !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 20 !important;
+  background: #f9fafb !important;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* Content area flows naturally, no separate scroll */
+.page-editor-mdx .mdxeditor-root-contenteditable {
+  flex: 1 0 auto !important;
+  overflow: visible !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-toolbar button,
+.mdx-editor-wrapper .mdxeditor-toolbar [role="button"] {
+  color: #374151 !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-toolbar button:hover,
+.mdx-editor-wrapper .mdxeditor-toolbar [role="button"]:hover {
+  background: #e5e7eb !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-root-contenteditable {
+  background: white !important;
+  color: #1f2937 !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-root-contenteditable h1,
+.mdx-editor-wrapper .mdxeditor-root-contenteditable h2,
+.mdx-editor-wrapper .mdxeditor-root-contenteditable h3,
+.mdx-editor-wrapper .mdxeditor-root-contenteditable h4,
+.mdx-editor-wrapper .mdxeditor-root-contenteditable h5,
+.mdx-editor-wrapper .mdxeditor-root-contenteditable h6 {
+  color: #111827 !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-root-contenteditable p,
+.mdx-editor-wrapper .mdxeditor-root-contenteditable li,
+.mdx-editor-wrapper .mdxeditor-root-contenteditable td,
+.mdx-editor-wrapper .mdxeditor-root-contenteditable th {
+  color: #1f2937 !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-root-contenteditable table {
+  border-color: #d1d5db !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-root-contenteditable th {
+  background: #f3f4f6 !important;
+  border-color: #d1d5db !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-root-contenteditable td {
+  border-color: #e5e7eb !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-root-contenteditable blockquote {
+  border-left-color: #d1d5db !important;
+  color: #4b5563 !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-root-contenteditable code {
+  background: #f3f4f6 !important;
+  color: #1f2937 !important;
+}
+
+.mdx-editor-wrapper .mdxeditor-root-contenteditable hr {
+  border-color: #d1d5db !important;
+}
+
+/* Page container light mode enforcement */
+.page-paper {
+  background: white !important;
+  color: #1f2937 !important;
+  color-scheme: light !important;
+}

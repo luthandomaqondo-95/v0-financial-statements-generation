@@ -3,9 +3,10 @@
 import { useRef, useEffect, useState } from "react"
 import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
-import { Trash2, Plus, AlertCircle } from "lucide-react"
+import { Trash2, Plus, AlertCircle, ChevronUp, ChevronDown, Monitor, Smartphone } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Dynamically import the editor to avoid SSR issues
 const Editor = dynamic(() => import("@/components/mdx-editor"), {
@@ -15,6 +16,16 @@ const Editor = dynamic(() => import("@/components/mdx-editor"), {
     ),
 })
 
+export interface PageSettings {
+    orientation: "portrait" | "landscape"
+    margins: {
+        top: number
+        right: number
+        bottom: number
+        left: number
+    }
+}
+
 interface PageEditorProps {
     content: string
     onChange: (content: string) => void
@@ -22,8 +33,17 @@ interface PageEditorProps {
     totalPages: number
     onDelete: () => void
     onAddNext: () => void
-    orientation: "portrait" | "landscape"
+    onMoveUp?: () => void
+    onMoveDown?: () => void
+    settings: PageSettings
+    onSettingsChange: (settings: PageSettings) => void
 }
+
+// Constants for page break estimation
+const LINE_HEIGHT_PX = 24 // Average line height in pixels
+const CHAR_PER_LINE_PORTRAIT = 80
+const CHAR_PER_LINE_LANDSCAPE = 110
+const DEFAULT_MARGIN = 20 // Default margin in mm
 
 export function PageEditor({
     content,
@@ -32,27 +52,60 @@ export function PageEditor({
     totalPages,
     onDelete,
     onAddNext,
-    orientation,
+    onMoveUp,
+    onMoveDown,
+    settings,
+    onSettingsChange,
 }: PageEditorProps) {
     const containerRef = useRef<HTMLDivElement>(null)
     const [isOverflowing, setIsOverflowing] = useState(false)
+    const [estimatedLines, setEstimatedLines] = useState(0)
+    const [maxLines, setMaxLines] = useState(0)
 
     // A4 dimensions in mm
-    const PAGE_HEIGHT_MM = orientation === "portrait" ? 297 : 210
+    const PAGE_WIDTH_MM = settings.orientation === "portrait" ? 210 : 297
+    const PAGE_HEIGHT_MM = settings.orientation === "portrait" ? 297 : 210
 
     useEffect(() => {
         const checkOverflow = () => {
             if (containerRef.current) {
-                // We check if the content height exceeds the page height
-                // We allow a small buffer (e.g., 5px) to avoid false positives due to rounding
-                const contentHeight = containerRef.current.scrollHeight
-                const pageHeightPx = (PAGE_HEIGHT_MM * 96) / 25.4 // Convert mm to px (approx)
+                // Calculate page dimensions
+                const pageHeightPx = (PAGE_HEIGHT_MM * 96) / 25.4
+                const marginTopPx = (DEFAULT_MARGIN * 96) / 25.4
+                const marginBottomPx = (DEFAULT_MARGIN * 96) / 25.4
+                const availableHeightPx = pageHeightPx - marginTopPx - marginBottomPx - 40 // 40px for footer
 
+                // Estimate lines based on content
+                const charPerLine = settings.orientation === "portrait" ? CHAR_PER_LINE_PORTRAIT : CHAR_PER_LINE_LANDSCAPE
+                
+                // Account for wrapped lines
+                let totalEstimatedLines = 0
+                content.split('\n').forEach(line => {
+                    if (line.trim() === '') {
+                        totalEstimatedLines += 0.5 // Empty lines take less space
+                    } else if (line.startsWith('#')) {
+                        totalEstimatedLines += 2 // Headers take more space
+                    } else if (line.startsWith('|')) {
+                        totalEstimatedLines += 1.2 // Table rows
+                    } else if (line.startsWith('```')) {
+                        totalEstimatedLines += 1 // Code block markers
+                    } else {
+                        // Regular text - estimate wrapping
+                        const wrappedLines = Math.ceil(line.length / charPerLine)
+                        totalEstimatedLines += Math.max(1, wrappedLines)
+                    }
+                })
+
+                const calculatedMaxLines = Math.floor(availableHeightPx / LINE_HEIGHT_PX)
+                setMaxLines(calculatedMaxLines)
+                setEstimatedLines(Math.round(totalEstimatedLines))
+                
+                // Check actual overflow using DOM
+                const contentHeight = containerRef.current.scrollHeight
                 setIsOverflowing(contentHeight > pageHeightPx + 5)
             }
         }
 
-        // Check initially and set up observer
         checkOverflow()
 
         const resizeObserver = new ResizeObserver(checkOverflow)
@@ -61,57 +114,173 @@ export function PageEditor({
         }
 
         return () => resizeObserver.disconnect()
-    }, [content, orientation, PAGE_HEIGHT_MM])
+    }, [content, settings, PAGE_HEIGHT_MM])
+
+    const handleOrientationChange = (value: string) => {
+        onSettingsChange({
+            ...settings,
+            orientation: value as "portrait" | "landscape",
+        })
+    }
 
     return (
         <div className="relative group mb-12 last:mb-0 flex flex-col items-center">
             {/* Page Header / Controls */}
-            <div className="w-full flex items-center justify-between mb-2 px-2 max-w-[210mm]">
-                <div className="text-sm font-medium text-muted-foreground">
-                    Page {pageNumber} of {totalPages}
-                </div>
-                <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {totalPages > 1 && (
-                        <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={onDelete}
-                            className="h-8 text-destructive hover:text-destructive"
-                        >
-                            <Trash2 className="h-4 w-4 mr-1" />
-                            Delete Page
-                        </Button>
+            <div
+                className="w-full flex items-center justify-between mb-2 px-2"
+                style={{ maxWidth: `${PAGE_WIDTH_MM}mm` }}
+            >
+                <div className="flex items-center gap-3">
+                    <div className="text-sm font-medium text-muted-foreground">
+                        Page {pageNumber} of {totalPages}
+                    </div>
+                    {isOverflowing && (
+                        <span className="text-xs text-destructive">
+                            ~{estimatedLines} lines / {maxLines} max
+                        </span>
                     )}
-                    <Button variant="outline" size="sm" onClick={onAddNext} className="h-8 bg-transparent">
-                        <Plus className="h-4 w-4 mr-1" />
-                        Add Page
-                    </Button>
+                </div>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Move Up/Down Buttons */}
+                    {onMoveUp && pageNumber > 1 && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        onClick={onMoveUp}
+                                        className="h-8 w-8"
+                                    >
+                                        <ChevronUp className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Move page up</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+                    {onMoveDown && pageNumber < totalPages && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        onClick={onMoveDown}
+                                        className="h-8 w-8"
+                                    >
+                                        <ChevronDown className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Move page down</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
+
+                    <div className="w-px h-6 bg-border mx-1" />
+
+                    {/* Orientation Toggle */}
+                    <Tabs value={settings.orientation} onValueChange={handleOrientationChange}>
+                        <TabsList className="h-8 p-1">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <TabsTrigger value="portrait" className="h-6 px-2">
+                                            <Smartphone className="h-4 w-4" />
+                                        </TabsTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Portrait</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <TabsTrigger value="landscape" className="h-6 px-2">
+                                            <Monitor className="h-4 w-4" />
+                                        </TabsTrigger>
+                                    </TooltipTrigger>
+                                    <TooltipContent>Landscape</TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                        </TabsList>
+                    </Tabs>
+
+                    <div className="w-px h-6 bg-border mx-1" />
+
+                    {/* Add Page Button */}
+                    <TooltipProvider>
+                        <Tooltip>
+                            <TooltipTrigger asChild>
+                                <Button
+                                    variant="ghost"
+                                    size="icon-sm"
+                                    onClick={onAddNext}
+                                    className="h-8 w-8"
+                                >
+                                    <Plus className="h-4 w-4" />
+                                </Button>
+                            </TooltipTrigger>
+                            <TooltipContent>Add page after</TooltipContent>
+                        </Tooltip>
+                    </TooltipProvider>
+
+                    {/* Delete Page Button */}
+                    {totalPages > 1 && (
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon-sm"
+                                        onClick={onDelete}
+                                        className="h-8 w-8 text-destructive hover:text-destructive"
+                                    >
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>Delete page</TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+                    )}
                 </div>
             </div>
 
-            {/* Page Container */}
+            {/* Page Container - Always Light Mode */}
             <div
                 className={cn(
-                    "bg-background shadow-lg transition-all duration-300 relative",
-                    orientation === "portrait" ? "w-[210mm] h-[297mm]" : "w-[297mm] h-[210mm]",
+                    "bg-white text-gray-900 shadow-lg transition-all duration-300 relative",
                     isOverflowing && "ring-2 ring-destructive ring-offset-2",
                 )}
+                style={{
+                    width: `${PAGE_WIDTH_MM}mm`,
+                    height: `${PAGE_HEIGHT_MM}mm`,
+                }}
             >
-                {/* Editor Wrapper with fixed height and overflow visible (or hidden/scroll based on preference) 
-            We keep overflow visible inside the container, but the container itself has fixed size.
-        */}
-                <div ref={containerRef} className="h-full w-full overflow-hidden">
+                {/* Editor Wrapper with sticky toolbar support */}
+                <div ref={containerRef} className="h-full w-full page-editor-container">
                     <Editor
                         markdown={content}
                         onChange={onChange}
-                        containerClassName="border-none h-full bg-transparent"
-                        contentEditableClassName="prose dark:prose-invert max-w-none p-[20mm] min-h-full outline-none"
+                        containerClassName="border-none h-full bg-transparent page-editor-mdx"
+                        contentEditableClassName={cn(
+                            "prose max-w-none min-h-full outline-none",
+                            "text-gray-900 [&_*]:text-gray-900",
+                            "[&_h1]:text-gray-900 [&_h2]:text-gray-900 [&_h3]:text-gray-900",
+                            "[&_p]:text-gray-800 [&_li]:text-gray-800",
+                            "[&_table]:text-gray-900 [&_th]:text-gray-900 [&_td]:text-gray-800",
+                        )}
+                        style={{
+                            paddingTop: `${DEFAULT_MARGIN}mm`,
+                            paddingRight: `${DEFAULT_MARGIN}mm`,
+                            paddingBottom: `${DEFAULT_MARGIN}mm`,
+                            paddingLeft: `${DEFAULT_MARGIN}mm`,
+                        }}
                     />
                 </div>
 
                 {/* Page Number Footer (Visual) */}
                 <div className="absolute bottom-4 left-0 right-0 text-center pointer-events-none">
-                    <span className="text-[10px] text-gray-400">Page {pageNumber}</span>
+                    <span className="text-[10px] text-gray-400">Page {pageNumber} of {totalPages}</span>
                 </div>
 
                 {/* Overflow Indicator */}
@@ -126,7 +295,10 @@ export function PageEditor({
                                 </TooltipTrigger>
                                 <TooltipContent side="right" className="max-w-xs">
                                     <p>Content exceeds page limits.</p>
-                                    <p className="text-xs opacity-80 mt-1">Move some content to the next page.</p>
+                                    <p className="text-xs opacity-80 mt-1">
+                                        ~{estimatedLines} lines used, max ~{maxLines} lines.
+                                        Move some content to the next page.
+                                    </p>
                                 </TooltipContent>
                             </Tooltip>
                         </TooltipProvider>

@@ -42,10 +42,10 @@ export function A4Preview({ content, onPageChange }: A4PreviewProps) {
           }}
         >
           <div className="p-16 h-full overflow-hidden">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              className="prose prose-sm max-w-none font-serif"
-              components={{
+            <div className="prose prose-sm max-w-none font-serif">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
                 h1: ({ node, ...props }) => (
                   <h1
                     className="text-3xl font-bold mb-6 text-gray-900 font-serif border-b-2 border-gray-300 pb-3"
@@ -113,9 +113,10 @@ export function A4Preview({ content, onPageChange }: A4PreviewProps) {
                 },
                 pre: ({ children }) => <>{children}</>,
               }}
-            >
-              {pageContent}
-            </ReactMarkdown>
+              >
+                {pageContent}
+              </ReactMarkdown>
+            </div>
           </div>
 
           {/* Page footer with page number */}
