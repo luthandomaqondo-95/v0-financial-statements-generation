@@ -14,26 +14,6 @@ const afsCoverPage = `
 
 ---
 
-### Table of Contents
-
-| Section | Page |
-|---------|------|
-| Company Information | 2 |
-| Chairman's Statement | 3 |
-| Chief Executive Officer's Report | 4-5 |
-| Strategic Report | 6-8 |
-| Corporate Governance Statement | 9-11 |
-| Risk Management | 12-13 |
-| Directors' Report | 14-16 |
-| Independent Auditor's Report | 17-19 |
-| Statement of Financial Position | 20-21 |
-| Statement of Comprehensive Income | 22 |
-| Statement of Changes in Equity | 23 |
-| Statement of Cash Flows | 24-25 |
-| Notes to the Financial Statements | 26-45 |
-| Five-Year Financial Summary | 46 |
-| Shareholder Information | 47 |
-| Corporate Directory | 48 |
 `
 
 // AFS Section 2: Company Information & Leadership Messages
@@ -1208,15 +1188,15 @@ United Kingdom
 const defaultContent = [
 	afsCoverPage,
 	afsCompanyInfo,
-	afsChairmanStatement,
-	afsCEOReport,
-	afsStrategicReport,
-	afsCorporateGovernance,
-	afsRiskManagement,
+	// afsChairmanStatement,
+	// afsCEOReport,
+	// afsStrategicReport,
+	// afsCorporateGovernance,
+	// afsRiskManagement,
 	afsFinancialPosition,
 	afsDetailedNotes,
-	afsFiveYearSummary,
-	afsShareholderInfo,
+	// afsFiveYearSummary,
+	// afsShareholderInfo,
 	afsCorporateDirectory,
 ].join("\n\n---\n\n")
 

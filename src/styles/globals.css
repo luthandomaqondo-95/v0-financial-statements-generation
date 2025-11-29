@@ -268,3 +268,99 @@
 .mdx-editor-no-toolbar .mdxeditor-toolbar {
   display: none !important;
 }
+
+/* Sticky Editor Toolbar - Force Light Mode */
+.sticky-toolbar-light {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.97 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  color-scheme: light !important;
+}
+
+/* Ensure all buttons within sticky toolbar use light mode */
+.sticky-toolbar-light button,
+.sticky-toolbar-light [role="button"] {
+  color: #374151 !important;
+}
+
+.sticky-toolbar-light button:hover,
+.sticky-toolbar-light [role="button"]:hover {
+  background: #e5e7eb !important;
+}
+
+.sticky-toolbar-light button:disabled,
+.sticky-toolbar-light [role="button"]:disabled {
+  color: #9ca3af !important;
+  opacity: 0.5;
+}
+
+/* Separator styling for light mode */
+.sticky-toolbar-light [data-orientation="vertical"] {
+  background: #e5e7eb !important;
+}
+
+/* Select/Dropdown trigger styling */
+.sticky-toolbar-light [data-radix-collection-item] {
+  color: #374151 !important;
+}
+
+.sticky-toolbar-light button[role="combobox"],
+.sticky-toolbar-light [data-slot="select-trigger"] {
+  background: white !important;
+  border-color: #e5e7eb !important;
+  color: #374151 !important;
+}
+
+.sticky-toolbar-light button[role="combobox"]:hover,
+.sticky-toolbar-light [data-slot="select-trigger"]:hover {
+  background: #f9fafb !important;
+}
+
+/* Icon colors within toolbar */
+.sticky-toolbar-light svg {
+  color: #374151 !important;
+}
+
+.sticky-toolbar-light button:disabled svg {
+  color: #9ca3af !important;
+}
+
+/* Select dropdown content (renders in portal, needs separate styling) */
+[data-radix-popper-content-wrapper] [role="listbox"] {
+  background: white !important;
+  border-color: #e5e7eb !important;
+  color: #374151 !important;
+}
+
+[data-radix-popper-content-wrapper] [role="option"] {
+  color: #374151 !important;
+}
+
+[data-radix-popper-content-wrapper] [role="option"]:hover,
+[data-radix-popper-content-wrapper] [role="option"][data-highlighted] {
+  background: #f3f4f6 !important;
+}
+
+[data-radix-popper-content-wrapper] [role="option"] svg {
+  color: #374151 !important;
+}
+
+/* Tooltip content (renders in portal) */
+[data-radix-popper-content-wrapper] [role="tooltip"] {
+  background: #1f2937 !important;
+  color: white !important;
+}

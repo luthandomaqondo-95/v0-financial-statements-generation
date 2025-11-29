@@ -91,14 +91,19 @@ export function StickyEditorToolbar({ className }: StickyEditorToolbarProps) {
     return (
         <div
             className={cn(
-                "sticky top-0 z-50 flex items-center gap-1 px-3 py-2 bg-white border-b shadow-sm transition-opacity duration-200",
+                "sticky top-0 z-50 flex items-center gap-1 px-3 py-2 shadow-sm transition-opacity duration-200 sticky-toolbar-light",
                 !isActive && "opacity-50",
                 className,
             )}
+            style={{
+                background: "white",
+                borderBottom: "1px solid #e5e7eb",
+                colorScheme: "light",
+            }}
         >
             {/* Active page indicator */}
-            <div className="flex items-center gap-2 pr-3 border-r mr-2">
-                <span className="text-xs text-muted-foreground">
+            <div className="flex items-center gap-2 pr-3 mr-2" style={{ borderRight: "1px solid #e5e7eb" }}>
+                <span className="text-xs" style={{ color: "#6b7280" }}>
                     {isActive ? `Editing Page ${(activePageIndex ?? 0) + 1}` : "Click on a page to edit"}
                 </span>
             </div>

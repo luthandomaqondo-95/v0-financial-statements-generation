@@ -373,7 +373,7 @@ function EditorPageContent() {
 				return `**${title}** ${dots} ${pageStr}`
 			}
 
-			return `${indent}${title} ${dots} ${pageStr}`
+			return `${indent}${title} ${dots} ${pageStr}`;
 		}
 
 		// Generate markdown for Table of Contents with professional formatting
