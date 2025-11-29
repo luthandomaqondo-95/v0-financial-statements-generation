@@ -4,6 +4,7 @@ import { Geist, Geist_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
+import { QueryProvider } from "@/components/query-provider"
 import "@/styles/globals.css"
 import "@mdxeditor/editor/style.css"
 
@@ -34,11 +35,13 @@ export default function RootLayout({
         <link rel="stylesheet" href="https://unpkg.com/@mdxeditor/editor@3.11.2/style.css" />
       </head> */}
       <body className={`${geistSans.variable} ${geistMono.variable} font-sans antialiased`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          {children}
-          <Toaster position="top-center"/>
-          <Analytics />
-        </ThemeProvider>
+        <QueryProvider>
+          <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+            {children}
+            <Toaster position="top-center"/>
+            <Analytics />
+          </ThemeProvider>
+        </QueryProvider>
       </body>
     </html>
   )

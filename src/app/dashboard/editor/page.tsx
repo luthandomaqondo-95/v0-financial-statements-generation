@@ -1,125 +1,27 @@
 "use client"
 
 import { useState, useMemo, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import { useQuery } from "@tanstack/react-query"
+import type { MDXEditorMethods } from "@mdxeditor/editor"
 import { Button } from "@/components/ui/button"
 import { A4Preview } from "@/components/a4-preview"
-import { AIGenerationDialog } from "@/components/ai-generation-dialog"
 import { PDFExport } from "@/components/pdf-export"
 import { FinancialTemplates } from "@/components/financial-templates"
-import { Save, FileText, ChevronLeft, ChevronsLeft, ChevronsRight, ZoomIn, ZoomOut, Eye, Edit, Plus, Loader2, List, Check } from "lucide-react"
-import Link from "next/link"
+import { StickyEditorToolbar } from "@/components/sticky-editor-toolbar"
+import { EditorProvider, useEditorContext } from "@/components/mdx-editor/editor-context"
+import { Save, FileText, ChevronLeft, ChevronsLeft, ChevronsRight, ZoomIn, ZoomOut, Eye, Edit, Plus, Loader2, List, Check, Scissors } from "lucide-react"
 import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PageEditor, PageSettings } from "@/components/page-editor"
+import { PageEditor, PageSettings, findBreakPoint, estimateOverflow, getMaxLines, getCharPerLine } from "@/components/page-editor"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { cn } from "@/lib/utils"
 
 const defaultPageSettings: PageSettings = {
 	orientation: "portrait",
-	margins: { top: 20, right: 20, bottom: 20, left: 20 },
+	margins: { top: 10, right: 15, bottom: 10, left: 15 },
 }
-
-const defaultContent = `
-# Annual Financial Statement 2024
-
-## Company Information
-**Company Name:** Acme Corporation Ltd.  
-**Registration Number:** 12345678  
-**Financial Year End:** December 31, 2024
-
----
-
-## Statement of Financial Position
-
-### Assets
-
-#### Non-Current Assets
-| Description | 2024 ($) | 2023 ($) |
-|-------------|----------|----------|
-| Property, Plant & Equipment | 2,450,000 | 2,100,000 |
-| Intangible Assets | 350,000 | 280,000 |
-| **Total Non-Current Assets** | **2,800,000** | **2,380,000** |
-
-#### Current Assets
-| Description | 2024 ($) | 2023 ($) |
-|-------------|----------|----------|
-| Cash and Cash Equivalents | 450,000 | 380,000 |
-| Trade Receivables | 620,000 | 540,000 |
-| Inventory | 380,000 | 320,000 |
-| **Total Current Assets** | **1,450,000** | **1,240,000** |
-
-**Total Assets:** $4,250,000
-
----
-
-## Financial Performance
-
-### Revenue Growth
-
-\`\`\`chart
-{
-  "type": "bar",
-  "title": "Revenue vs Expenses (2020-2024)",
-  "data": [
-    { "year": "2020", "revenue": 3500000, "expenses": 2800000 },
-    { "year": "2021", "revenue": 4100000, "expenses": 3200000 },
-    { "year": "2022", "revenue": 4500000, "expenses": 3400000 },
-    { "year": "2023", "revenue": 4800000, "expenses": 3600000 },
-    { "year": "2024", "revenue": 5200000, "expenses": 3900000 }
-  ],
-  "xAxisKey": "year",
-  "dataKeys": ["revenue", "expenses"],
-  "colors": ["#2563eb", "#dc2626"]
-}
-\`\`\`
-
----
-
-## Statement of Comprehensive Income
-
-### Revenue and Expenses
-
-| Description | 2024 ($) | 2023 ($) |
-|-------------|----------|----------|
-| Revenue | 5,200,000 | 4,800,000 |
-| Cost of Sales | (3,100,000) | (2,900,000) |
-| **Gross Profit** | **2,100,000** | **1,900,000** |
-| Operating Expenses | (1,200,000) | (1,100,000) |
-| **Operating Profit** | **900,000** | **800,000** |
-| Finance Costs | (50,000) | (45,000) |
-| **Profit Before Tax** | **850,000** | **755,000** |
-| Income Tax Expense | (212,500) | (188,750) |
-| **Profit for the Year** | **637,500** | **566,250** |
-
----
-
-## Notes to the Financial Statements
-
-### 1. Accounting Policies
-
-The financial statements have been prepared in accordance with International Financial Reporting Standards (IFRS) and the Companies Act 2006.
-
-### 2. Revenue Recognition
-
-Revenue is recognized when control of goods or services is transferred to the customer, typically upon delivery.
-
-### 3. Property, Plant & Equipment
-
-Property, plant and equipment are stated at cost less accumulated depreciation. Depreciation is calculated on a straight-line basis over the estimated useful lives of the assets.
-
----
-
-## Director's Statement
-
-The directors are responsible for preparing the financial statements in accordance with applicable law and regulations. The directors consider that the financial statements give a true and fair view of the state of affairs of the company.
-
-**Signed:**
-
-_________________________  
-John Smith, Director  
-Date: March 15, 2025
-`
 
 interface PageData {
 	id: string
@@ -130,6 +32,53 @@ interface PageData {
 
 // Generate unique ID
 const generateId = () => `page-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
+// Helper to process overflows
+const processPageOverflows = (pages: PageData[]): { pages: PageData[], splitCount: number } => {
+	let newPages = [...pages]
+	let splitCount = 0
+	let iterations = 0
+	const maxIterations = 100 // Prevent infinite loops
+
+	while (iterations < maxIterations) {
+		let foundOverflow = false
+
+		for (let i = 0; i < newPages.length; i++) {
+			const page = newPages[i]
+			const orientation = page.settings.orientation
+
+			if (estimateOverflow(page.content, orientation)) {
+				const maxLines = getMaxLines(orientation)
+				const charPerLine = getCharPerLine(orientation)
+				const breakResult = findBreakPoint(page.content, maxLines, charPerLine)
+
+				if (breakResult) {
+					// Update current page
+					newPages[i] = { ...page, content: breakResult.keepContent }
+
+					// Insert new page with overflow content
+					const newPage: PageData = {
+						id: generateId(),
+						content: breakResult.overflowContent,
+						settings: { ...page.settings },
+					}
+					newPages.splice(i + 1, 0, newPage)
+
+					splitCount++
+					foundOverflow = true
+					break // Restart from the beginning since indices changed
+				}
+			}
+		}
+
+		if (!foundOverflow) {
+			break // No more overflows found
+		}
+		iterations++
+	}
+
+	return { pages: newPages, splitCount }
+}
 
 // Debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -149,19 +98,53 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default function EditorPage() {
-	// Initialize pages by splitting the default content
-	const [pages, setPages] = useState<PageData[]>(() => {
-		return defaultContent.split(/\n---\n/).map((p) => ({
-			id: generateId(),
-			content: p.trim(),
-			settings: { ...defaultPageSettings },
-		}))
+	return (
+		<EditorProvider>
+			<EditorPageContent />
+		</EditorProvider>
+	)
+}
+
+function EditorPageContent() {
+	const router = useRouter()
+	const { setActiveEditor, setActivePageIndex } = useEditorContext()
+
+	const [pages, setPages] = useState<PageData[]>([])
+
+	const { data: initialContent, isLoading, isError } = useQuery({
+		queryKey: ["afs-default-content"],
+		queryFn: async () => {
+			const res = await fetch("/api/afs")
+			if (!res.ok) throw new Error("Failed to fetch")
+			const { content } = await res.json()
+			return content as string
+		},
+		staleTime: Number.POSITIVE_INFINITY,
 	})
+
+	useEffect(() => {
+		if (initialContent && pages.length === 0) {
+			const initialPages = initialContent.split(/\n---\n/).map((p: string) => ({
+				id: generateId(),
+				content: p.trim(),
+				settings: { ...defaultPageSettings },
+			}))
+
+			const { pages: processedPages } = processPageOverflows(initialPages)
+			setPages(processedPages)
+		}
+	}, [initialContent, pages.length])
+
+	useEffect(() => {
+		if (isError) {
+			toast.error("Failed to load content")
+		}
+	}, [isError])
 
 	const [currentPage, setCurrentPage] = useState(1)
 	const [zoom, setZoom] = useState("100")
 	const [activeTab, setActiveTab] = useState("edit")
-	const [isChatOpen, setIsChatOpen] = useState(true)
+	const [isChatOpen, setIsChatOpen] = useState(false)
 	const [isSaving, setIsSaving] = useState(false)
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 	const [lastSaved, setLastSaved] = useState<Date | null>(null)
@@ -175,10 +158,10 @@ export default function EditorPage() {
 
 	// Auto-save effect
 	useEffect(() => {
-		if (hasUnsavedChanges && debouncedContent) {
+		if (!isLoading && hasUnsavedChanges && debouncedContent) {
 			performAutoSave()
 		}
-	}, [debouncedContent])
+	}, [debouncedContent, isLoading, hasUnsavedChanges])
 
 	const performAutoSave = useCallback(async () => {
 		setIsSaving(true)
@@ -203,15 +186,22 @@ export default function EditorPage() {
 	}, [fullContent, pages])
 
 	const handleTemplateSelect = (templateContent: string) => {
-		const newPages = templateContent.split(/\n---\n/).map((p) => ({
+		const initialPages = templateContent.split(/\n---\n/).map((p) => ({
 			id: generateId(),
 			content: p.trim(),
 			settings: { ...defaultPageSettings },
 		}))
-		setPages(newPages)
+
+		const { pages: processedPages, splitCount } = processPageOverflows(initialPages)
+		setPages(processedPages)
 		setHasUnsavedChanges(true)
 		setHasTableOfContents(false)
-		toast.success("Template loaded successfully")
+
+		if (splitCount > 0) {
+			toast.success(`Template loaded and split into ${processedPages.length} pages (${splitCount} splits)`)
+		} else {
+			toast.success("Template loaded successfully")
+		}
 	}
 
 	const handleManualSave = () => {
@@ -282,6 +272,47 @@ export default function EditorPage() {
 		setHasUnsavedChanges(true)
 		toast.success(`Page moved ${toIndex < fromIndex ? "up" : "down"}`)
 	}
+
+	// Handle splitting overflow content to a new page
+	const handleSplitOverflow = useCallback((pageIndex: number, currentContent: string, overflowContent: string) => {
+		setPages((prev) => {
+			const newPages = [...prev]
+			// Update current page with trimmed content
+			newPages[pageIndex] = { ...newPages[pageIndex], content: currentContent }
+			// Insert new page with overflow content
+			const newPage: PageData = {
+				id: generateId(),
+				content: overflowContent,
+				settings: { ...newPages[pageIndex].settings },
+			}
+			newPages.splice(pageIndex + 1, 0, newPage)
+			return newPages
+		})
+		setHasUnsavedChanges(true)
+		toast.success("Content split to new page")
+	}, [])
+
+	// Split all overflowing pages
+	const splitAllOverflows = useCallback(() => {
+		setPages((prevPages) => {
+			const { pages: newPages, splitCount } = processPageOverflows(prevPages)
+
+			if (splitCount > 0) {
+				toast.success(`Split ${splitCount} page${splitCount > 1 ? 's' : ''} to fix overflows`)
+			} else {
+				toast.info("No overflowing pages to split")
+			}
+
+			return newPages
+		})
+		setHasUnsavedChanges(true)
+	}, [])
+
+	// Handle editor focus to update the active editor in context
+	const handleEditorFocus = useCallback((ref: React.RefObject<MDXEditorMethods | null>, pageIndex: number) => {
+		setActiveEditor(ref)
+		setActivePageIndex(pageIndex)
+	}, [setActiveEditor, setActivePageIndex])
 
 	const addTableOfContents = () => {
 		if (hasTableOfContents) {
@@ -380,16 +411,15 @@ export default function EditorPage() {
 		toast.success("Table of Contents added after cover page")
 	}
 
+
 	return (
 		<div className="h-screen flex flex-col bg-background">
 			{/* Header */}
 			<header className="flex h-14 items-center gap-4 border-b bg-background px-4 shrink-0">
-				<Link href="/">
-					<Button variant="ghost" size="sm" className="gap-2">
-						<ChevronLeft className="h-4 w-4" />
-						Back
-					</Button>
-				</Link>
+				<Button variant="ghost" size="sm" className="gap-2" onClick={() => router.back()}>
+					<ChevronLeft className="h-4 w-4" />
+					Back
+				</Button>
 				<div className="flex items-center gap-2">
 					<FileText className="h-5 w-5 text-muted-foreground" />
 					<span className="font-medium">Annual Financial Statement 2024</span>
@@ -397,6 +427,21 @@ export default function EditorPage() {
 
 				{/* Auto-save indicator */}
 				<div className="flex items-center gap-2 ml-4">
+
+					<Button
+						variant="outline"
+						size="sm"
+						className="gap-2 bg-transparent"
+						onClick={handleManualSave}
+						disabled={isSaving}
+					>
+						{isSaving ? (
+							<Loader2 className="h-4 w-4 animate-spin" />
+						) : (
+							<Save className="h-4 w-4" />
+						)}
+						Save
+					</Button>
 					{isSaving ? (
 						<div className="flex items-center gap-2 text-muted-foreground text-sm">
 							<Loader2 className="h-4 w-4 animate-spin" />
@@ -413,48 +458,13 @@ export default function EditorPage() {
 							<span>Saved {lastSaved.toLocaleTimeString()}</span>
 						</div>
 					) : null}
+
 				</div>
 
 				<div className="ml-auto flex items-center gap-2">
 					{/* Table of Contents Button */}
-					<TooltipProvider>
-						<Tooltip>
-							<TooltipTrigger asChild>
-								<Button
-									variant="outline"
-									size="sm"
-									className={`gap-2 bg-transparent ${hasTableOfContents ? "opacity-50" : ""}`}
-									onClick={addTableOfContents}
-									disabled={hasTableOfContents}
-								>
-									<List className="h-4 w-4" />
-									Add Contents
-								</Button>
-							</TooltipTrigger>
-							<TooltipContent>
-								{hasTableOfContents
-									? "Table of Contents already added"
-									: "Add Table of Contents after cover page"}
-							</TooltipContent>
-						</Tooltip>
-					</TooltipProvider>
 
 					<FinancialTemplates onSelectTemplate={handleTemplateSelect} />
-					<Button
-						variant="outline"
-						size="sm"
-						className="gap-2 bg-transparent"
-						onClick={handleManualSave}
-						disabled={isSaving}
-					>
-						{isSaving ? (
-							<Loader2 className="h-4 w-4 animate-spin" />
-						) : (
-							<Save className="h-4 w-4" />
-						)}
-						Save
-					</Button>
-					<PDFExport content={fullContent} />
 				</div>
 			</header>
 
@@ -521,6 +531,47 @@ export default function EditorPage() {
 							</TabsList>
 
 							<div className="flex items-center gap-4">
+
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												variant="outline"
+												size="sm"
+												className="gap-2 bg-transparent"
+												onClick={splitAllOverflows}
+											>
+												<Scissors className="h-4 w-4" />
+												Split Overflows
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											Automatically split all overflowing pages
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
+
+								<TooltipProvider>
+									<Tooltip>
+										<TooltipTrigger asChild>
+											<Button
+												variant="outline"
+												size="sm"
+												className={`gap-2 bg-transparent ${hasTableOfContents ? "opacity-50" : ""}`}
+												onClick={addTableOfContents}
+												disabled={hasTableOfContents}
+											>
+												<List className="h-4 w-4" />
+												Add Contents
+											</Button>
+										</TooltipTrigger>
+										<TooltipContent>
+											{hasTableOfContents
+												? "Table of Contents already added"
+												: "Add Table of Contents after cover page"}
+										</TooltipContent>
+									</Tooltip>
+								</TooltipProvider>
 								<div className="text-sm text-muted-foreground">
 									{pages.length} page{pages.length !== 1 ? "s" : ""}
 									{activeTab === "preview" && ` • Viewing page ${currentPage}`}
@@ -554,80 +605,100 @@ export default function EditorPage() {
 									>
 										<ZoomIn className="h-4 w-4" />
 									</Button>
+									<PDFExport content={fullContent} />
 								</div>
 							</div>
 						</div>
 					</div>
 
-					<TabsContent
-						value="edit"
-						className="flex-1 flex flex-row mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
-					>
-
-						{/* Editor interface */}
-						<div
-							className={cn(
-								"h-full flex-1 overflow-auto bg-muted/10 relative transition-all duration-300 ease-in-out"
-							)}
-						>
-							<div
-								className="relative flex flex-col items-center py-8 min-h-full"
-								style={{
-									transform: `scale(${Number.parseInt(zoom) / 100})`,
-									transformOrigin: "top center",
-								}}
-							>
-								{pages.map((pageData, index) => (
-									<PageEditor
-										key={pageData.id}
-										pageNumber={index + 1}
-										totalPages={pages.length}
-										content={pageData.content}
-										onChange={(content) => updatePage(index, content)}
-										onAddNext={() => addPage(index)}
-										onDelete={() => deletePage(index)}
-										onMoveUp={() => movePage(index, index - 1)}
-										onMoveDown={() => movePage(index, index + 1)}
-										settings={pageData.settings}
-										onSettingsChange={(settings) => updatePageSettings(index, settings)}
-									/>
-								))}
-
-								<TooltipProvider>
-									<Tooltip>
-										<TooltipTrigger asChild>
-											<Button
-												variant="outline"
-												size="icon"
-												className="mt-4 mb-12 h-12 w-12 rounded-full border-dashed bg-transparent"
-												onClick={() => addPage(pages.length - 1)}
-											>
-												<Plus className="h-5 w-5" />
-											</Button>
-										</TooltipTrigger>
-										<TooltipContent>Add new page at the end</TooltipContent>
-									</Tooltip>
-								</TooltipProvider>
+					{
+						(isLoading) ? (
+							<div className="h-screen flex items-center justify-center bg-background">
+								<div className="flex flex-col items-center gap-4">
+									<Loader2 className="h-8 w-8 animate-spin text-primary" />
+									<p className="text-muted-foreground">Loading financial statement...</p>
+								</div>
 							</div>
-						</div>
-					</TabsContent>
+						) : (
 
-					<TabsContent
-						value="preview"
-						className="flex-1 mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
-					>
-						<div className="h-full flex flex-col bg-muted/20">
-							<div
-								className="flex-1 overflow-auto p-6"
-								style={{
-									transform: `scale(${Number.parseInt(zoom) / 100})`,
-									transformOrigin: "top center",
-								}}
-							>
-								<A4Preview content={fullContent} onPageChange={setCurrentPage} />
-							</div>
-						</div>
-					</TabsContent>
+							<>
+								<TabsContent
+									value="edit"
+									className="flex-1 flex flex-col mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
+								>
+									{/* Sticky Toolbar - Outside the transform container */}
+									<StickyEditorToolbar />
+
+									{/* Editor interface */}
+									<div
+										className={cn(
+											"h-full flex-1 overflow-auto bg-muted/10 relative transition-all duration-300 ease-in-out"
+										)}
+									>
+										<div
+											className="relative flex flex-col items-center py-8 min-h-full"
+											style={{
+												transform: `scale(${Number.parseInt(zoom) / 100})`,
+												transformOrigin: "top center",
+											}}
+										>
+											{pages.map((pageData, index) => (
+												<PageEditor
+													key={pageData.id}
+													pageNumber={index + 1}
+													totalPages={pages.length}
+													content={pageData.content}
+													onChange={(content) => updatePage(index, content)}
+													onAddNext={() => addPage(index)}
+													onDelete={() => deletePage(index)}
+													onMoveUp={() => movePage(index, index - 1)}
+													onMoveDown={() => movePage(index, index + 1)}
+													settings={pageData.settings}
+													onSettingsChange={(settings) => updatePageSettings(index, settings)}
+													hideToolbar={true}
+													onEditorFocus={handleEditorFocus}
+													onSplitOverflow={(currentContent, overflowContent) => handleSplitOverflow(index, currentContent, overflowContent)}
+												/>
+											))}
+
+											<TooltipProvider>
+												<Tooltip>
+													<TooltipTrigger asChild>
+														<Button
+															variant="outline"
+															size="icon"
+															className="mt-4 mb-12 h-12 w-12 rounded-full border-dashed bg-transparent"
+															onClick={() => addPage(pages.length - 1)}
+														>
+															<Plus className="h-5 w-5" />
+														</Button>
+													</TooltipTrigger>
+													<TooltipContent>Add new page at the end</TooltipContent>
+												</Tooltip>
+											</TooltipProvider>
+										</div>
+									</div>
+								</TabsContent>
+
+								<TabsContent
+									value="preview"
+									className="flex-1 mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
+								>
+									<div className="h-full flex flex-col bg-muted/20">
+										<div
+											className="flex-1 overflow-auto p-6"
+											style={{
+												transform: `scale(${Number.parseInt(zoom) / 100})`,
+												transformOrigin: "top center",
+											}}
+										>
+											<A4Preview content={fullContent} onPageChange={setCurrentPage} />
+										</div>
+									</div>
+								</TabsContent>
+							</>
+						)
+					}
 				</Tabs>
 			</div>
 		</div>

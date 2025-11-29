@@ -155,7 +155,6 @@
   height: 100% !important;
   display: flex !important;
   flex-direction: column !important;
-  overflow: hidden !important;
 }
 
 /* MDXEditor is the scroll container - both toolbar and content inside */
@@ -246,4 +245,26 @@
   background: white !important;
   color: #1f2937 !important;
   color-scheme: light !important;
+}
+
+/* MDX Editor without toolbar - takes full height */
+.page-editor-mdx-no-toolbar {
+  height: 100% !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.page-editor-mdx-no-toolbar .mdxeditor {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+}
+
+.page-editor-mdx-no-toolbar .mdxeditor-root-contenteditable {
+  flex: 1 !important;
+}
+
+/* Hide any residual toolbar styling when hidden */
+.mdx-editor-no-toolbar .mdxeditor-toolbar {
+  display: none !important;
 }

@@ -8,6 +8,7 @@ export interface EditorProps extends MDXEditorProps {
     containerClassName?: string
     contentEditableClassName?: string
     style?: CSSProperties
+    hideToolbar?: boolean
 }
 
 // This is the only place InitializedMDXEditor is imported directly.
