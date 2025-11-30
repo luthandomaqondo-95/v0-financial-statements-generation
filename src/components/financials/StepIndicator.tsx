@@ -90,7 +90,7 @@ const StepIndicator: React.FC<StepIndicatorProps> = ({ variant = 'progress', cla
                     )
                 }
             </div>
-            <Button variant="outline" disabled={currentStep === totalSteps - 1} className={`h-9 cursor-pointer rounded-${variant === 'dropdown' ? 'md' : 'full -mt-1'}`} onClick={onNextClick}>Next</Button>
+            <Button variant="default" disabled={currentStep === totalSteps - 1} className={`h-9 cursor-pointer rounded-${variant === 'dropdown' ? 'md' : 'full -mt-1'}`} onClick={onNextClick}>Next</Button>
         </div>
     );
 };
