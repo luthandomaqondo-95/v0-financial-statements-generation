@@ -20,7 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
 import StepIndicator from "@/components/financials/StepIndicator"
-import { PageData, PageSettings } from "@/types/afs-types"
+import { DocumentSettings, PageData, PageSettings } from "@/types/afs-types"
 
 const defaultPageSettings: PageSettings = {
 	orientation: "portrait",
@@ -47,6 +47,10 @@ function EditorPageContent() {
 	const { setActiveEditor, setActivePageIndex } = useEditorContext();
 
 
+	// const [documentSettings, setDocumentSettings] = useState<DocumentSettings>({
+	// 	orientation: "portrait",
+	// 	pages: 
+	// })
 	const [pages, setPages] = useState<PageData[]>([])
 	const [currentPage, setCurrentPage] = useState(1)
 	const [zoom, setZoom] = useState("100")
@@ -597,11 +601,11 @@ function EditorPageContent() {
 													<Skeleton className="h-10 w-48 rounded" />
 													<Skeleton className="h-12 w-12 rounded" />
 												</div>
-												
+
 												{/* Title skeleton */}
 												<Skeleton className="h-8 w-3/4 rounded mb-4" />
 												<Skeleton className="h-6 w-1/2 rounded mb-8" />
-												
+
 												{/* Content lines skeleton */}
 												<div className="space-y-3 mb-8">
 													<Skeleton className="h-4 w-full rounded" />
@@ -610,10 +614,10 @@ function EditorPageContent() {
 													<Skeleton className="h-4 w-full rounded" />
 													<Skeleton className="h-4 w-3/4 rounded" />
 												</div>
-												
+
 												{/* Section heading skeleton */}
 												<Skeleton className="h-6 w-1/3 rounded mb-4" />
-												
+
 												{/* More content skeleton */}
 												<div className="space-y-3 mb-8">
 													<Skeleton className="h-4 w-full rounded" />
@@ -621,7 +625,7 @@ function EditorPageContent() {
 													<Skeleton className="h-4 w-full rounded" />
 													<Skeleton className="h-4 w-2/3 rounded" />
 												</div>
-												
+
 												{/* Table skeleton */}
 												<div className="border rounded-md overflow-hidden mb-8">
 													<div className="bg-muted/30 p-3 flex gap-4">
@@ -639,7 +643,7 @@ function EditorPageContent() {
 														</div>
 													))}
 												</div>
-												
+
 												{/* More paragraphs skeleton */}
 												<div className="space-y-3">
 													<Skeleton className="h-4 w-full rounded" />
@@ -648,7 +652,7 @@ function EditorPageContent() {
 													<Skeleton className="h-4 w-3/5 rounded" />
 												</div>
 											</div>
-											
+
 											{/* Page number skeleton */}
 											<div className="absolute -bottom-6 left-1/2 -translate-x-1/2">
 												<Skeleton className="h-5 w-16 rounded-full" />
@@ -663,7 +667,7 @@ function EditorPageContent() {
 											>
 												{/* Section heading skeleton */}
 												<Skeleton className="h-7 w-2/5 rounded mb-6" />
-												
+
 												{/* Content skeleton */}
 												<div className="space-y-3 mb-8">
 													<Skeleton className="h-4 w-full rounded" />
@@ -672,7 +676,7 @@ function EditorPageContent() {
 													<Skeleton className="h-4 w-4/5 rounded" />
 													<Skeleton className="h-4 w-3/4 rounded" />
 												</div>
-												
+
 												{/* Another section */}
 												<Skeleton className="h-6 w-1/3 rounded mb-4" />
 												<div className="space-y-3 mb-8">
@@ -680,7 +684,7 @@ function EditorPageContent() {
 													<Skeleton className="h-4 w-5/6 rounded" />
 													<Skeleton className="h-4 w-4/5 rounded" />
 												</div>
-												
+
 												{/* List skeleton */}
 												<div className="space-y-2 pl-4 mb-8">
 													{[...Array(4)].map((_, i) => (
@@ -690,7 +694,7 @@ function EditorPageContent() {
 														</div>
 													))}
 												</div>
-												
+
 												{/* More content */}
 												<div className="space-y-3">
 													<Skeleton className="h-4 w-full rounded" />
@@ -698,7 +702,7 @@ function EditorPageContent() {
 													<Skeleton className="h-4 w-full rounded" />
 												</div>
 											</div>
-											
+
 											{/* Page number skeleton */}
 											<div className="absolute -bottom-6 left-1/2 -translate-x-1/2">
 												<Skeleton className="h-5 w-16 rounded-full" />
@@ -757,11 +761,11 @@ function EditorPageContent() {
 													<TooltipTrigger asChild>
 														<Button
 															variant="outline"
-															size="icon"
-															className="mt-4 mb-12 h-12 w-12 rounded-full border-dashed bg-transparent"
+															// size="icon"
+															className=" mb-12 h-12 rounded-full border-dashed bg-transparent"
 															onClick={() => addPage(pages.length - 1)}
 														>
-															<Plus className="h-5 w-5" />
+															<Plus className="h-5 w-5" /> Add Page
 														</Button>
 													</TooltipTrigger>
 													<TooltipContent>Add new page at the end</TooltipContent>
@@ -783,7 +787,11 @@ function EditorPageContent() {
 												transformOrigin: "top center",
 											}}
 										>
-											<A4Preview content={fullContent} onPageChange={setCurrentPage} />
+											<A4Preview
+												orientation={defaultPageSettings.orientation}
+												content={fullContent}
+												onPageChange={setCurrentPage}
+											/>
 										</div>
 									</div>
 								</TabsContent>

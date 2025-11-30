@@ -14,3 +14,13 @@ export interface PageData {
 	settings: PageSettings
 	isTableOfContents?: boolean
 }
+
+export interface DocumentSettings {
+    orientation: "portrait" | "landscape"
+    margins: {
+        top: number
+        right: number
+        bottom: number
+        left: number
+    }
+}
