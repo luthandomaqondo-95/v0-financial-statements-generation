@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown"
 import remarkGfm from "remark-gfm"
-import { FinancialChart } from "@/components/financial-chart"
+import { FinancialChart } from "@/components/financials/financial-chart"
 
 interface A4PreviewProps {
   content: string

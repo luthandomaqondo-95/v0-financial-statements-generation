@@ -5,97 +5,34 @@ import { useRouter } from "next/navigation"
 import { useQuery } from "@tanstack/react-query"
 import type { MDXEditorMethods } from "@mdxeditor/editor"
 import { Button } from "@/components/ui/button"
-import { A4Preview } from "@/components/a4-preview"
+import { A4Preview } from "@/components/financials/preview/a4-preview"
 import { PDFExport } from "@/components/pdf-export"
-import { FinancialTemplates } from "@/components/financial-templates"
+import { FinancialTemplates } from "@/components/financials/financial-templates"
 import { StickyEditorToolbar } from "@/components/sticky-editor-toolbar"
 import { EditorProvider, useEditorContext } from "@/components/mdx-editor/editor-context"
-import { Save, FileText, ChevronLeft, ChevronsLeft, ChevronsRight, ZoomIn, ZoomOut, Eye, Edit, Plus, Loader2, List, Check, Scissors } from "lucide-react"
+import { Save, FileText, ChevronLeft, ChevronsLeft, ChevronsRight, ZoomIn, ZoomOut, Eye, Edit, Plus, Loader2, List, Check, Scissors, Loader } from "lucide-react"
 import { toast } from "sonner"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { PageEditor, PageSettings, findBreakPoint, estimateOverflow, getMaxLines, getCharPerLine } from "@/components/page-editor"
+import { PageEditor } from "@/components/financials/editor/page-editor";
+import { generateId, processPageOverflows } from "@/lib/utils/afs-utils";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+import { Skeleton } from "@/components/ui/skeleton"
 import { cn } from "@/lib/utils"
+import StepIndicator from "@/components/financials/StepIndicator"
+import { PageData, PageSettings } from "@/types/afs-types"
 
 const defaultPageSettings: PageSettings = {
 	orientation: "portrait",
 	margins: { top: 10, right: 15, bottom: 10, left: 15 },
 }
+const steps = [
+	"Project Info", "Documents",
+	"Trial Balance", "Financial Statements",
+	"Finalize"
+];
+const totalSteps = steps.length;
 
-interface PageData {
-	id: string
-	content: string
-	settings: PageSettings
-	isTableOfContents?: boolean
-}
-
-// Generate unique ID
-const generateId = () => `page-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-
-// Helper to process overflows
-const processPageOverflows = (pages: PageData[]): { pages: PageData[], splitCount: number } => {
-	let newPages = [...pages]
-	let splitCount = 0
-	let iterations = 0
-	const maxIterations = 100 // Prevent infinite loops
-
-	while (iterations < maxIterations) {
-		let foundOverflow = false
-
-		for (let i = 0; i < newPages.length; i++) {
-			const page = newPages[i]
-			const orientation = page.settings.orientation
-
-			if (estimateOverflow(page.content, orientation)) {
-				const maxLines = getMaxLines(orientation)
-				const charPerLine = getCharPerLine(orientation)
-				const breakResult = findBreakPoint(page.content, maxLines, charPerLine)
-
-				if (breakResult) {
-					// Update current page
-					newPages[i] = { ...page, content: breakResult.keepContent }
-
-					// Insert new page with overflow content
-					const newPage: PageData = {
-						id: generateId(),
-						content: breakResult.overflowContent,
-						settings: { ...page.settings },
-					}
-					newPages.splice(i + 1, 0, newPage)
-
-					splitCount++
-					foundOverflow = true
-					break // Restart from the beginning since indices changed
-				}
-			}
-		}
-
-		if (!foundOverflow) {
-			break // No more overflows found
-		}
-		iterations++
-	}
-
-	return { pages: newPages, splitCount }
-}
-
-// Debounce hook
-function useDebounce<T>(value: T, delay: number): T {
-	const [debouncedValue, setDebouncedValue] = useState<T>(value)
-
-	useEffect(() => {
-		const handler = setTimeout(() => {
-			setDebouncedValue(value)
-		}, delay)
-
-		return () => {
-			clearTimeout(handler)
-		}
-	}, [value, delay])
-
-	return debouncedValue
-}
 
 export default function EditorPage() {
 	return (
@@ -107,9 +44,25 @@ export default function EditorPage() {
 
 function EditorPageContent() {
 	const router = useRouter()
-	const { setActiveEditor, setActivePageIndex } = useEditorContext()
+	const { setActiveEditor, setActivePageIndex } = useEditorContext();
+
 
 	const [pages, setPages] = useState<PageData[]>([])
+	const [currentPage, setCurrentPage] = useState(1)
+	const [zoom, setZoom] = useState("100")
+	const [activeTab, setActiveTab] = useState("edit")
+	const [isChatOpen, setIsChatOpen] = useState(false)
+	const [isSaving, setIsSaving] = useState(false)
+	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+	const [lastSaved, setLastSaved] = useState<Date | null>(null)
+	const [hasTableOfContents, setHasTableOfContents] = useState(false);
+	const [currentStep, setCurrentStep] = useState(1);
+
+	// Computed full content for preview/export
+	const fullContent = useMemo(() => pages.map((p) => p.content).join("\n\n---\n\n"), [pages]);
+	// Debounced content for auto-save (2 second delay)
+	const debouncedContent = fullContent; //useDebounce(fullContent, 2000)
+
 
 	const { data: initialContent, isLoading, isError } = useQuery({
 		queryKey: ["afs-default-content"],
@@ -122,46 +75,18 @@ function EditorPageContent() {
 		staleTime: Number.POSITIVE_INFINITY,
 	})
 
-	useEffect(() => {
-		if (initialContent && pages.length === 0) {
-			const initialPages = initialContent.split(/\n---\n/).map((p: string) => ({
-				id: generateId(),
-				content: p.trim(),
-				settings: { ...defaultPageSettings },
-			}))
 
-			const { pages: processedPages } = processPageOverflows(initialPages)
-			setPages(processedPages)
-		}
-	}, [initialContent, pages.length])
+	const handleStepClick = (step: number) => {
+		setCurrentStep(step)
+	}
 
-	useEffect(() => {
-		if (isError) {
-			toast.error("Failed to load content")
-		}
-	}, [isError])
+	const handlePrevClick = () => {
+		setCurrentStep(currentStep - 1)
+	}
 
-	const [currentPage, setCurrentPage] = useState(1)
-	const [zoom, setZoom] = useState("100")
-	const [activeTab, setActiveTab] = useState("edit")
-	const [isChatOpen, setIsChatOpen] = useState(false)
-	const [isSaving, setIsSaving] = useState(false)
-	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-	const [lastSaved, setLastSaved] = useState<Date | null>(null)
-	const [hasTableOfContents, setHasTableOfContents] = useState(false)
-
-	// Computed full content for preview/export
-	const fullContent = useMemo(() => pages.map((p) => p.content).join("\n\n---\n\n"), [pages]);
-
-	// Debounced content for auto-save (2 second delay)
-	const debouncedContent = fullContent; //useDebounce(fullContent, 2000)
-
-	// Auto-save effect
-	useEffect(() => {
-		if (!isLoading && hasUnsavedChanges && debouncedContent) {
-			performAutoSave()
-		}
-	}, [debouncedContent, isLoading, hasUnsavedChanges])
+	const handleNextClick = () => {
+		setCurrentStep(currentStep + 1)
+	}
 
 	const performAutoSave = useCallback(async () => {
 		setIsSaving(true)
@@ -409,7 +334,33 @@ function EditorPageContent() {
 		setHasTableOfContents(true)
 		setHasUnsavedChanges(true)
 		toast.success("Table of Contents added after cover page")
-	}
+	};
+
+	useEffect(() => {
+		if (initialContent && pages.length === 0) {
+			const initialPages = initialContent.split(/\n---\n/).map((p: string) => ({
+				id: generateId(),
+				content: p.trim(),
+				settings: { ...defaultPageSettings },
+			}))
+
+			const { pages: processedPages } = processPageOverflows(initialPages)
+			setPages(processedPages)
+		}
+	}, [initialContent, pages.length])
+
+	useEffect(() => {
+		if (isError) {
+			toast.error("Failed to load content")
+		}
+	}, [isError])
+
+	// Auto-save effect
+	useEffect(() => {
+		if (!isLoading && hasUnsavedChanges && debouncedContent) {
+			performAutoSave()
+		}
+	}, [debouncedContent, isLoading, hasUnsavedChanges])
 
 
 	return (
@@ -427,16 +378,15 @@ function EditorPageContent() {
 
 				{/* Auto-save indicator */}
 				<div className="flex items-center gap-2 ml-4">
-
 					<Button
-						variant="outline"
+						variant="ghost"
 						size="sm"
-						className="gap-2 bg-transparent"
+						className="gap-2 cursor-pointer"
 						onClick={handleManualSave}
 						disabled={isSaving}
 					>
 						{isSaving ? (
-							<Loader2 className="h-4 w-4 animate-spin" />
+							<Loader className="h-4 w-4 animate-spin" />
 						) : (
 							<Save className="h-4 w-4" />
 						)}
@@ -444,7 +394,7 @@ function EditorPageContent() {
 					</Button>
 					{isSaving ? (
 						<div className="flex items-center gap-2 text-muted-foreground text-sm">
-							<Loader2 className="h-4 w-4 animate-spin" />
+							<Loader className="h-4 w-4 animate-spin" />
 							<span>Saving...</span>
 						</div>
 					) : hasUnsavedChanges ? (
@@ -460,14 +410,19 @@ function EditorPageContent() {
 					) : null}
 
 				</div>
-
 				<div className="ml-auto flex items-center gap-2">
-					{/* Table of Contents Button */}
-
-					<FinancialTemplates onSelectTemplate={handleTemplateSelect} />
+					<StepIndicator
+						variant="dropdown"
+						currentStep={currentStep}
+						totalSteps={totalSteps}
+						steps={steps}
+						onStepClick={handleStepClick}
+						onPrevClick={handlePrevClick}
+						onNextClick={handleNextClick}
+					/>
+					{/* <FinancialTemplates onSelectTemplate={handleTemplateSelect} /> */}
 				</div>
 			</header>
-
 			{/* Main Content */}
 			<div className="flex-1 flex overflow-hidden">
 				{/* Chat panel - sits alongside entire Editor/Preview area */}
@@ -490,14 +445,14 @@ function EditorPageContent() {
 
 				{/* Editor/Preview Tabs - fills remaining space */}
 				<Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex-1 flex flex-col min-w-0">
-					<div className="border-b px-4 bg-muted/30 flex items-center justify-between shrink-0">
+					<div className="border-b rounded-md flex items-center justify-between shrink-0">
 						<TooltipProvider>
 							<Tooltip>
 								<TooltipTrigger asChild>
 									<Button
 										variant="ghost"
 										size="icon"
-										className="h-12 w-12 cursor-pointer"
+										className="h-12 w-12 cursor-pointer rounded-full"
 										onClick={() => setIsChatOpen(!isChatOpen)}
 									>
 										{isChatOpen ? (
@@ -531,7 +486,6 @@ function EditorPageContent() {
 							</TabsList>
 
 							<div className="flex items-center gap-4">
-
 								<TooltipProvider>
 									<Tooltip>
 										<TooltipTrigger asChild>
@@ -574,7 +528,6 @@ function EditorPageContent() {
 								</TooltipProvider>
 								<div className="text-sm text-muted-foreground">
 									{pages.length} page{pages.length !== 1 ? "s" : ""}
-									{activeTab === "preview" && ` • Viewing page ${currentPage}`}
 								</div>
 								<div className="flex items-center gap-1">
 									<Button
@@ -613,10 +566,148 @@ function EditorPageContent() {
 
 					{
 						(isLoading) ? (
-							<div className="h-screen flex items-center justify-center bg-background">
-								<div className="flex flex-col items-center gap-4">
-									<Loader2 className="h-8 w-8 animate-spin text-primary" />
-									<p className="text-muted-foreground">Loading financial statement...</p>
+							<div className="flex-1 flex flex-col overflow-hidden mt-2">
+								{/* Skeleton Toolbar */}
+								<div className="h-10 border-b bg-background/50 flex items-center px-4 gap-2 shrink-0">
+									<Skeleton className="h-6 w-6 rounded" />
+									<Skeleton className="h-6 w-6 rounded" />
+									<Skeleton className="h-6 w-px mx-1" />
+									<Skeleton className="h-6 w-20 rounded" />
+									<Skeleton className="h-6 w-6 rounded" />
+									<Skeleton className="h-6 w-6 rounded" />
+									<Skeleton className="h-6 w-px mx-1" />
+									<Skeleton className="h-6 w-6 rounded" />
+									<Skeleton className="h-6 w-6 rounded" />
+									<Skeleton className="h-6 w-6 rounded" />
+									<Skeleton className="h-6 w-px mx-1" />
+									<Skeleton className="h-6 w-24 rounded" />
+								</div>
+
+								{/* Skeleton Pages Area */}
+								<div className="flex-1 overflow-auto bg-muted/10">
+									<div className="flex flex-col items-center py-8 gap-8">
+										{/* Skeleton Page 1 */}
+										<div className="relative group">
+											<div
+												className="bg-white shadow-lg border rounded-sm overflow-hidden"
+												style={{ width: "210mm", minHeight: "297mm", padding: "10mm 15mm" }}
+											>
+												{/* Page header skeleton */}
+												<div className="flex justify-between items-start mb-8">
+													<Skeleton className="h-10 w-48 rounded" />
+													<Skeleton className="h-12 w-12 rounded" />
+												</div>
+												
+												{/* Title skeleton */}
+												<Skeleton className="h-8 w-3/4 rounded mb-4" />
+												<Skeleton className="h-6 w-1/2 rounded mb-8" />
+												
+												{/* Content lines skeleton */}
+												<div className="space-y-3 mb-8">
+													<Skeleton className="h-4 w-full rounded" />
+													<Skeleton className="h-4 w-5/6 rounded" />
+													<Skeleton className="h-4 w-4/5 rounded" />
+													<Skeleton className="h-4 w-full rounded" />
+													<Skeleton className="h-4 w-3/4 rounded" />
+												</div>
+												
+												{/* Section heading skeleton */}
+												<Skeleton className="h-6 w-1/3 rounded mb-4" />
+												
+												{/* More content skeleton */}
+												<div className="space-y-3 mb-8">
+													<Skeleton className="h-4 w-full rounded" />
+													<Skeleton className="h-4 w-5/6 rounded" />
+													<Skeleton className="h-4 w-full rounded" />
+													<Skeleton className="h-4 w-2/3 rounded" />
+												</div>
+												
+												{/* Table skeleton */}
+												<div className="border rounded-md overflow-hidden mb-8">
+													<div className="bg-muted/30 p-3 flex gap-4">
+														<Skeleton className="h-4 w-1/4 rounded" />
+														<Skeleton className="h-4 w-1/4 rounded" />
+														<Skeleton className="h-4 w-1/4 rounded" />
+														<Skeleton className="h-4 w-1/4 rounded" />
+													</div>
+													{[...Array(5)].map((_, i) => (
+														<div key={i} className="p-3 flex gap-4 border-t">
+															<Skeleton className="h-4 w-1/4 rounded" />
+															<Skeleton className="h-4 w-1/4 rounded" />
+															<Skeleton className="h-4 w-1/4 rounded" />
+															<Skeleton className="h-4 w-1/4 rounded" />
+														</div>
+													))}
+												</div>
+												
+												{/* More paragraphs skeleton */}
+												<div className="space-y-3">
+													<Skeleton className="h-4 w-full rounded" />
+													<Skeleton className="h-4 w-4/5 rounded" />
+													<Skeleton className="h-4 w-full rounded" />
+													<Skeleton className="h-4 w-3/5 rounded" />
+												</div>
+											</div>
+											
+											{/* Page number skeleton */}
+											<div className="absolute -bottom-6 left-1/2 -translate-x-1/2">
+												<Skeleton className="h-5 w-16 rounded-full" />
+											</div>
+										</div>
+
+										{/* Skeleton Page 2 (partial view) */}
+										<div className="relative group">
+											<div
+												className="bg-white shadow-lg border rounded-sm overflow-hidden"
+												style={{ width: "210mm", minHeight: "297mm", padding: "10mm 15mm" }}
+											>
+												{/* Section heading skeleton */}
+												<Skeleton className="h-7 w-2/5 rounded mb-6" />
+												
+												{/* Content skeleton */}
+												<div className="space-y-3 mb-8">
+													<Skeleton className="h-4 w-full rounded" />
+													<Skeleton className="h-4 w-5/6 rounded" />
+													<Skeleton className="h-4 w-full rounded" />
+													<Skeleton className="h-4 w-4/5 rounded" />
+													<Skeleton className="h-4 w-3/4 rounded" />
+												</div>
+												
+												{/* Another section */}
+												<Skeleton className="h-6 w-1/3 rounded mb-4" />
+												<div className="space-y-3 mb-8">
+													<Skeleton className="h-4 w-full rounded" />
+													<Skeleton className="h-4 w-5/6 rounded" />
+													<Skeleton className="h-4 w-4/5 rounded" />
+												</div>
+												
+												{/* List skeleton */}
+												<div className="space-y-2 pl-4 mb-8">
+													{[...Array(4)].map((_, i) => (
+														<div key={i} className="flex items-center gap-2">
+															<Skeleton className="h-2 w-2 rounded-full shrink-0" />
+															<Skeleton className="h-4 w-4/5 rounded" />
+														</div>
+													))}
+												</div>
+												
+												{/* More content */}
+												<div className="space-y-3">
+													<Skeleton className="h-4 w-full rounded" />
+													<Skeleton className="h-4 w-5/6 rounded" />
+													<Skeleton className="h-4 w-full rounded" />
+												</div>
+											</div>
+											
+											{/* Page number skeleton */}
+											<div className="absolute -bottom-6 left-1/2 -translate-x-1/2">
+												<Skeleton className="h-5 w-16 rounded-full" />
+											</div>
+										</div>
+
+										{/* Add page button skeleton */}
+										<Skeleton className="h-12 w-12 rounded-full mt-4 mb-12" />
+									</div>
 								</div>
 							</div>
 						) : (
