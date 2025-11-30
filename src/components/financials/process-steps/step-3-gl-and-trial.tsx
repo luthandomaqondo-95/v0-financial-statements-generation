@@ -135,7 +135,7 @@ export function Step3GLAndTrial() {
     const isBalanced = Math.abs(totalDebits - totalCredits) < 0.01
 
     const filteredAccounts = trialBalance.filter(account => {
-        const matchesSearch = searchTerm === "" || 
+        const matchesSearch = searchTerm === "" ||
             account.accountName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             account.accountCode.includes(searchTerm)
         const matchesCategory = selectedCategory === "all" || account.category === selectedCategory
@@ -146,7 +146,7 @@ export function Step3GLAndTrial() {
         <div className="h-[calc(100vh-3.5rem)] overflow-y-auto">
             <div className="mx-auto p-8">
                 {/* Header */}
-                <motion.div 
+                <motion.div
                     initial={{ opacity: 0, y: -20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-8"
@@ -162,16 +162,15 @@ export function Step3GLAndTrial() {
                     </div>
                 </motion.div>
 
-                <motion.div 
+                <motion.div
                     variants={containerVariants}
                     initial="hidden"
                     animate="visible"
-                    className="space-y-6"
                 >
                     {/* Summary Cards */}
                     <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4">
                         <Card className="border-0 shadow-lg shadow-black/5">
-                            <CardContent className="p-4">
+                            <CardContent className="p-2">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-xs uppercase tracking-wider text-muted-foreground">Total Debits</p>
@@ -184,7 +183,7 @@ export function Step3GLAndTrial() {
                             </CardContent>
                         </Card>
                         <Card className="border-0 shadow-lg shadow-black/5">
-                            <CardContent className="p-4">
+                            <CardContent className="p-2">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-xs uppercase tracking-wider text-muted-foreground">Total Credits</p>
@@ -197,7 +196,7 @@ export function Step3GLAndTrial() {
                             </CardContent>
                         </Card>
                         <Card className="border-0 shadow-lg shadow-black/5">
-                            <CardContent className="p-4">
+                            <CardContent className="p-2">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-xs uppercase tracking-wider text-muted-foreground">Difference</p>
@@ -210,11 +209,11 @@ export function Step3GLAndTrial() {
                                     </div>
                                     <div className={cn(
                                         "h-10 w-10 rounded-lg flex items-center justify-center",
-                                        isBalanced 
-                                            ? "bg-emerald-50 dark:bg-emerald-950" 
+                                        isBalanced
+                                            ? "bg-emerald-50 dark:bg-emerald-950"
                                             : "bg-red-50 dark:bg-red-950"
                                     )}>
-                                        {isBalanced 
+                                        {isBalanced
                                             ? <CheckCircle2 className="h-5 w-5 text-emerald-600" />
                                             : <AlertTriangle className="h-5 w-5 text-red-600" />
                                         }
@@ -224,11 +223,11 @@ export function Step3GLAndTrial() {
                         </Card>
                         <Card className={cn(
                             "border-0 shadow-lg shadow-black/5",
-                            isBalanced 
+                            isBalanced
                                 ? "bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-950 dark:to-emerald-900"
                                 : "bg-gradient-to-br from-amber-50 to-amber-100 dark:from-amber-950 dark:to-amber-900"
                         )}>
-                            <CardContent className="p-4">
+                            <CardContent className="p-2 px-4">
                                 <div className="flex items-center justify-between">
                                     <div>
                                         <p className="text-xs uppercase tracking-wider text-muted-foreground">Status</p>
@@ -239,57 +238,10 @@ export function Step3GLAndTrial() {
                                             {isBalanced ? "Balanced" : "Unbalanced"}
                                         </p>
                                     </div>
-                                    {isBalanced 
+                                    {isBalanced
                                         ? <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
                                         : <AlertTriangle className="h-8 w-8 text-amber-600 dark:text-amber-400" />
                                     }
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </motion.div>
-
-                    {/* Filters and Actions */}
-                    <motion.div variants={itemVariants}>
-                        <Card className="border-0 shadow-lg shadow-black/5">
-                            <CardContent className="p-4">
-                                <div className="flex flex-col md:flex-row gap-4">
-                                    <div className="flex-1 relative">
-                                        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            placeholder="Search by account name or code..."
-                                            value={searchTerm}
-                                            onChange={(e) => setSearchTerm(e.target.value)}
-                                            className="pl-10 h-10"
-                                        />
-                                    </div>
-                                    <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                                        <SelectTrigger className="w-full md:w-[180px] h-10">
-                                            <Filter className="h-4 w-4 mr-2" />
-                                            <SelectValue placeholder="Filter by category" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="all">All Categories</SelectItem>
-                                            <SelectItem value="Assets">Assets</SelectItem>
-                                            <SelectItem value="Liabilities">Liabilities</SelectItem>
-                                            <SelectItem value="Equity">Equity</SelectItem>
-                                            <SelectItem value="Income">Income</SelectItem>
-                                            <SelectItem value="Expenses">Expenses</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <div className="flex gap-2">
-                                        <Button variant="outline" size="sm" className="h-10 gap-2">
-                                            <Upload className="h-4 w-4" />
-                                            Import
-                                        </Button>
-                                        <Button variant="outline" size="sm" className="h-10 gap-2">
-                                            <Download className="h-4 w-4" />
-                                            Export
-                                        </Button>
-                                        <Button variant="outline" size="sm" className="h-10 gap-2">
-                                            <RefreshCw className="h-4 w-4" />
-                                            Refresh
-                                        </Button>
-                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
@@ -307,23 +259,63 @@ export function Step3GLAndTrial() {
                                     Click on a row to expand and view sub-accounts
                                 </CardDescription>
                             </CardHeader>
+                            {/* Filters and Actions */}
+                            <div className="flex flex-col md:flex-row gap-4">
+                                <div className="flex-1 relative">
+                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        placeholder="Search by account name or code..."
+                                        value={searchTerm}
+                                        onChange={(e) => setSearchTerm(e.target.value)}
+                                        className="pl-10 h-10"
+                                    />
+                                </div>
+                                <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+                                    <SelectTrigger className="w-full md:w-[180px] h-10">
+                                        <Filter className="h-4 w-4 mr-2" />
+                                        <SelectValue placeholder="Filter by category" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="all">All Categories</SelectItem>
+                                        <SelectItem value="Assets">Assets</SelectItem>
+                                        <SelectItem value="Liabilities">Liabilities</SelectItem>
+                                        <SelectItem value="Equity">Equity</SelectItem>
+                                        <SelectItem value="Income">Income</SelectItem>
+                                        <SelectItem value="Expenses">Expenses</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <div className="flex gap-2">
+                                    {/* <Button variant="outline" size="sm" className="h-10 gap-2">
+                                                <Upload className="h-4 w-4" />
+                                                Import
+                                            </Button>
+                                            <Button variant="outline" size="sm" className="h-10 gap-2">
+                                                <Download className="h-4 w-4" />
+                                                Export
+                                            </Button> */}
+                                    <Button variant="outline" size="sm" className="h-10 gap-2">
+                                        <RefreshCw className="h-4 w-4" />
+                                        Refresh
+                                    </Button>
+                                </div>
+                            </div>
                             <CardContent className="p-0 mt-4">
                                 <div className="overflow-x-auto">
                                     <table className="w-full">
-                                        <thead>
-                                            <tr className="border-b bg-muted/50">
-                                                <th className="text-left p-4 font-medium text-xs uppercase tracking-wider text-muted-foreground w-8"></th>
+                                        <thead className="overflow-hidden rounded-t-lg">
+                                            <tr className="border-b bg-muted/50 rounded-t-lg overflow-hidden">
+                                                <th className="text-left p-4 font-medium text-xs rounded-tl-xl uppercase tracking-wider text-muted-foreground w-8"></th>
                                                 <th className="text-left p-4 font-medium text-xs uppercase tracking-wider text-muted-foreground">Code</th>
                                                 <th className="text-left p-4 font-medium text-xs uppercase tracking-wider text-muted-foreground">Account Name</th>
                                                 <th className="text-left p-4 font-medium text-xs uppercase tracking-wider text-muted-foreground">Category</th>
                                                 <th className="text-right p-4 font-medium text-xs uppercase tracking-wider text-muted-foreground">Debit</th>
-                                                <th className="text-right p-4 font-medium text-xs uppercase tracking-wider text-muted-foreground">Credit</th>
+                                                <th className="text-right p-4 font-medium text-xs rounded-tr-xl uppercase tracking-wider text-muted-foreground">Credit</th>
                                             </tr>
                                         </thead>
                                         <tbody>
                                             {filteredAccounts.map((account) => (
                                                 <>
-                                                    <tr 
+                                                    <tr
                                                         key={account.id}
                                                         className={cn(
                                                             "border-b transition-colors cursor-pointer hover:bg-muted/50",
@@ -334,7 +326,7 @@ export function Step3GLAndTrial() {
                                                         <td className="p-4">
                                                             {account.children && account.children.length > 0 && (
                                                                 <Button variant="ghost" size="icon" className="h-6 w-6">
-                                                                    {expandedRows.has(account.id) 
+                                                                    {expandedRows.has(account.id)
                                                                         ? <ChevronDown className="h-4 w-4" />
                                                                         : <ChevronRight className="h-4 w-4" />
                                                                     }
@@ -387,12 +379,12 @@ export function Step3GLAndTrial() {
                                             ))}
                                         </tbody>
                                         <tfoot>
-                                            <tr className="bg-muted font-bold">
-                                                <td className="p-4" colSpan={4}>
+                                            <tr className="bg-muted font-bold ">
+                                                <td className="p-4 rounded-bl-xl" colSpan={4}>
                                                     <span className="text-sm uppercase tracking-wider">Totals</span>
                                                 </td>
                                                 <td className="p-4 text-right font-mono">{formatCurrency(totalDebits)}</td>
-                                                <td className="p-4 text-right font-mono">{formatCurrency(totalCredits)}</td>
+                                                <td className="p-4 text-right font-mono rounded-br-xl">{formatCurrency(totalCredits)}</td>
                                             </tr>
                                         </tfoot>
                                     </table>

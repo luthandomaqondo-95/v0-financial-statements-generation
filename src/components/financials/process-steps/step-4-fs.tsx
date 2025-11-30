@@ -101,7 +101,7 @@ export function Step4FS() {
 
     return (
         <div className="h-[calc(100vh-3.5rem)] overflow-y-auto">
-            <div className="max-w-5xl mx-auto p-8">
+            <div className="mx-auto p-8">
                 {/* Header */}
                 <motion.div 
                     initial={{ opacity: 0, y: -20 }}
@@ -127,8 +127,8 @@ export function Step4FS() {
                 >
                     {/* Statement Selection */}
                     <motion.div variants={itemVariants}>
-                        <Card className="border-0 shadow-lg shadow-black/5">
-                            <CardHeader>
+                        <Card className="border-0 m-0 p-0 shadow-lg shadow-black/5">
+                            <CardHeader className="p-0">
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2">
                                         <div className="h-8 w-8 rounded-lg bg-violet-50 dark:bg-violet-950 flex items-center justify-center">
@@ -144,11 +144,11 @@ export function Step4FS() {
                                     </span>
                                 </div>
                             </CardHeader>
-                            <CardContent className="space-y-3">
-                                {statements.map((statement) => (
-                                    <motion.div
-                                        key={statement.id}
-                                        whileHover={{ x: 4 }}
+                            <CardContent className="space-y-3 p-0 grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+                                {statements.map((statement, index) => (
+                                    <div
+                                        key={index}
+                                        // whileHover={{ x: 4 }}
                                         onClick={() => toggleStatement(statement.id)}
                                         className={cn(
                                             "flex items-center gap-4 p-4 rounded-xl border cursor-pointer transition-all",
@@ -187,7 +187,7 @@ export function Step4FS() {
                                                 <Check className="h-4 w-4 text-white" />
                                             )}
                                         </div>
-                                    </motion.div>
+                                    </div>
                                 ))}
                             </CardContent>
                         </Card>

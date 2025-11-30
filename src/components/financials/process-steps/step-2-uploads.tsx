@@ -2,12 +2,11 @@
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react"
 import { motion } from "framer-motion"
-import { Upload, Trash, Trash2, Eye, CheckCircle, File, Image as ImageIcon, X } from "lucide-react"
+import { Upload, Trash, Trash2, Eye, CheckCircle, X } from "lucide-react"
 import CircularProgress from "@/components/ui-custom/circular-progress"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Progress } from "@/components/ui/progress"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn, formatFileSize, getFileIcon } from "@/lib/utils"
 import { toast } from "sonner"
@@ -15,10 +14,9 @@ import Image from "next/image"
 
 
 const documentCategories = [
-    { id: "trial-balance", label: "Trial Balance", accept: ".xlsx,.xls,.csv" },
     { id: "bank-statements", label: "Bank Statements", accept: ".pdf,.xlsx,.csv" },
+    { id: "sources", label: "Sources (Receipts and Invoices)", accept: ".pdf,.docx,.xlsx,.jpg,.png" },
     { id: "prior-year", label: "Prior Year Financials", accept: ".pdf,.docx" },
-    { id: "supporting", label: "Supporting Documents", accept: ".pdf,.docx,.xlsx,.jpg,.png" }
 ]
 
 interface UploadedFile {
