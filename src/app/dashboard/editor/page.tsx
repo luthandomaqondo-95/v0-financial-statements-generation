@@ -59,7 +59,7 @@ export default function AFS(props: { params: Params }) {
 	const projectInfoForm = useForm<z.infer<typeof projectInfoSchema>>({
 		resolver: zodResolver(projectInfoSchema),
 		defaultValues: {
-			reportingFramework: "IFRS",
+			reportingFramework: "ifrs",
 			category: undefined,
 			natureOfBusiness: "",
 			financialYear: undefined,

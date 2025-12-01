@@ -20,325 +20,325 @@ import { A4Preview } from "../preview/a4-preview";
 
 
 const defaultPageSettings: PageSettings = {
-	orientation: "portrait",
-	margins: { top: 10, right: 15, bottom: 10, left: 15 },
+    orientation: "portrait",
+    margins: { top: 10, right: 15, bottom: 10, left: 15 },
 }
 
 
-export function StepFullAFS({project_id, setIsSaving, setHasUnsavedChanges}: {project_id: string|number, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void}) {
-	return (
-		<EditorProvider>
-			<StepFullAFSContent project_id={project_id} setIsSaving={setIsSaving} setHasUnsavedChanges={setHasUnsavedChanges} />
-		</EditorProvider>
-	)
+export function StepFullAFS({ project_id, setIsSaving, setHasUnsavedChanges }: { project_id: string | number, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void }) {
+    return (
+        <EditorProvider>
+            <StepFullAFSContent project_id={project_id} setIsSaving={setIsSaving} setHasUnsavedChanges={setHasUnsavedChanges} />
+        </EditorProvider>
+    )
 }
 function StepFullAFSContent({
     project_id,
     setIsSaving, setHasUnsavedChanges
-}: {project_id: string|number, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void}) {
-    	// const [documentSettings, setDocumentSettings] = useState<DocumentSettings>({
-	// 	orientation: "portrait",
-	// 	pages: 
-	// })
+}: { project_id: string | number, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void }) {
+    // const [documentSettings, setDocumentSettings] = useState<DocumentSettings>({
+    // 	orientation: "portrait",
+    // 	pages: 
+    // })
     const { setActiveEditor, setActivePageIndex } = useEditorContext();
 
-	const [currentPage, setCurrentPage] = useState(1)
-	const [zoom, setZoom] = useState("100")
-	const [activeTab, setActiveTab] = useState("edit")
-	const [isChatOpen, setIsChatOpen] = useState(false);
-	const [pages, setPages] = useState<PageData[]>([])
-	const [hasTableOfContents, setHasTableOfContents] = useState(false);
+    const [currentPage, setCurrentPage] = useState(1)
+    const [zoom, setZoom] = useState("100")
+    const [activeTab, setActiveTab] = useState("preview")
+    const [isChatOpen, setIsChatOpen] = useState(false);
+    const [pages, setPages] = useState<PageData[]>([])
+    const [hasTableOfContents, setHasTableOfContents] = useState(false);
     const [hasUnsavedChangesInThisStep, setHasUnsavedChangesInThisStep] = useState(false);
 
-	// Computed full content for preview/export
-	const fullContent = useMemo(() => pages.map((p) => p.content).join("\n\n---\n\n"), [pages]);
+    // Computed full content for preview/export
+    const fullContent = useMemo(() => pages.map((p) => p.content).join("\n\n---\n\n"), [pages]);
 
-	const { data: initialContent, isLoading, isError } = useQuery({
-		queryKey: ["afs-default-content"],
-		queryFn: async () => {
-			const res = await fetch(`/api/afs?project_id=${project_id}`)
-			if (!res.ok) throw new Error("Failed to fetch")
-			const { content } = await res.json()
-			return content as string
-		},
-		staleTime: Number.POSITIVE_INFINITY,
-	})
+    const { data: initialContent, isLoading, isError } = useQuery({
+        queryKey: ["afs-default-content"],
+        queryFn: async () => {
+            const res = await fetch(`/api/afs?project_id=${project_id}`)
+            if (!res.ok) throw new Error("Failed to fetch")
+            const { content } = await res.json()
+            return content as string
+        },
+        staleTime: Number.POSITIVE_INFINITY,
+    })
 
-	const performAutoSave = useCallback(async () => {
-		setIsSaving(true)
-		try {
-			const saveData = {
-				content: fullContent,
-				pages: pages,
-				savedAt: new Date().toISOString(),
-			}
-			// localStorage.setItem("afs-draft", JSON.stringify(saveData));
+    const performAutoSave = useCallback(async () => {
+        setIsSaving(true)
+        try {
+            const saveData = {
+                content: fullContent,
+                pages: pages,
+                savedAt: new Date().toISOString(),
+            }
+            // localStorage.setItem("afs-draft", JSON.stringify(saveData));
 
-			setHasUnsavedChanges(false)
+            setHasUnsavedChanges(false)
             setHasUnsavedChangesInThisStep(false);
-		} catch (error) {
-			console.error("Auto-save failed:", error)
-		} finally {
-			setIsSaving(false)
-		}
-	}, [fullContent, pages]);
+        } catch (error) {
+            console.error("Auto-save failed:", error)
+        } finally {
+            setIsSaving(false)
+        }
+    }, [fullContent, pages]);
     const handleTemplateSelect = (templateContent: string) => {
-		const initialPages = templateContent.split(/\n---\n/).map((p) => ({
-			id: generateId(),
-			content: p.trim(),
-			settings: { ...defaultPageSettings },
-		}))
+        const initialPages = templateContent.split(/\n---\n/).map((p) => ({
+            id: generateId(),
+            content: p.trim(),
+            settings: { ...defaultPageSettings },
+        }))
 
-		const { pages: processedPages, splitCount } = processPageOverflows(initialPages)
-		setPages(processedPages)
-		setHasUnsavedChanges(true);
+        const { pages: processedPages, splitCount } = processPageOverflows(initialPages)
+        setPages(processedPages)
+        setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
-		setHasTableOfContents(false)
+        setHasTableOfContents(false)
 
-		if (splitCount > 0) {
-			toast.success(`Template loaded and split into ${processedPages.length} pages (${splitCount} splits)`)
-		} else {
-			toast.success("Template loaded successfully")
-		}
-	}
-	const updatePageSettings = (index: number, settings: PageSettings) => {
-		setPages((prev) => {
-			const newPages = [...prev]
-			newPages[index] = { ...newPages[index], settings }
-			return newPages
-		})
-		setHasUnsavedChanges(true);
+        if (splitCount > 0) {
+            toast.success(`Template loaded and split into ${processedPages.length} pages (${splitCount} splits)`)
+        } else {
+            toast.success("Template loaded successfully")
+        }
+    }
+    const updatePageSettings = (index: number, settings: PageSettings) => {
+        setPages((prev) => {
+            const newPages = [...prev]
+            newPages[index] = { ...newPages[index], settings }
+            return newPages
+        })
+        setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
-	}
-	const updatePage = (index: number, content: string) => {
-		setPages((prev) => {
-			const newPages = [...prev]
-			newPages[index] = { ...newPages[index], content }
-			return newPages
-		})
-		setHasUnsavedChanges(true);
+    }
+    const updatePage = (index: number, content: string) => {
+        setPages((prev) => {
+            const newPages = [...prev]
+            newPages[index] = { ...newPages[index], content }
+            return newPages
+        })
+        setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
-	}
+    }
 
 
-	const addPage = (afterIndex: number) => {
-		const newPage: PageData = {
-			id: generateId(),
-			content: "# New Page\n\nStart writing here...",
-			settings: { ...defaultPageSettings },
-		}
+    const addPage = (afterIndex: number) => {
+        const newPage: PageData = {
+            id: generateId(),
+            content: "# New Page\n\nStart writing here...",
+            settings: { ...defaultPageSettings },
+        }
 
-		setPages((prev) => {
-			const newPages = [...prev]
-			// Insert new page after the specified index
-			newPages.splice(afterIndex + 1, 0, newPage)
-			return newPages
-		})
-		setHasUnsavedChanges(true);
+        setPages((prev) => {
+            const newPages = [...prev]
+            // Insert new page after the specified index
+            newPages.splice(afterIndex + 1, 0, newPage)
+            return newPages
+        })
+        setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
-		toast.success(`New page added after page ${afterIndex + 1}`)
-	}
+        toast.success(`New page added after page ${afterIndex + 1}`)
+    }
 
-	const deletePage = (index: number) => {
-		if (pages.length <= 1) {
-			toast.error("Cannot delete the last page")
-			return
-		}
+    const deletePage = (index: number) => {
+        if (pages.length <= 1) {
+            toast.error("Cannot delete the last page")
+            return
+        }
 
-		// Check if this is the table of contents page
-		if (pages[index].isTableOfContents) {
-			setHasTableOfContents(false)
-		}
+        // Check if this is the table of contents page
+        if (pages[index].isTableOfContents) {
+            setHasTableOfContents(false)
+        }
 
-		setPages((prev) => prev.filter((_, i) => i !== index))
-		setHasUnsavedChanges(true);
+        setPages((prev) => prev.filter((_, i) => i !== index))
+        setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
-		toast.success("Page deleted")
-	}
+        toast.success("Page deleted")
+    }
 
-	const movePage = (fromIndex: number, toIndex: number) => {
-		if (toIndex < 0 || toIndex >= pages.length) return
+    const movePage = (fromIndex: number, toIndex: number) => {
+        if (toIndex < 0 || toIndex >= pages.length) return
 
-		setPages((prev) => {
-			const newPages = [...prev]
-			const [movedPage] = newPages.splice(fromIndex, 1)
-			newPages.splice(toIndex, 0, movedPage)
-			return newPages
-		})
-		setHasUnsavedChanges(true);
+        setPages((prev) => {
+            const newPages = [...prev]
+            const [movedPage] = newPages.splice(fromIndex, 1)
+            newPages.splice(toIndex, 0, movedPage)
+            return newPages
+        })
+        setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
-		toast.success(`Page moved ${toIndex < fromIndex ? "up" : "down"}`)
-	}
+        toast.success(`Page moved ${toIndex < fromIndex ? "up" : "down"}`)
+    }
 
-	// Handle splitting overflow content to a new page
-	const handleSplitOverflow = useCallback((pageIndex: number, currentContent: string, overflowContent: string) => {
-		setPages((prev) => {
-			const newPages = [...prev]
-			// Update current page with trimmed content
-			newPages[pageIndex] = { ...newPages[pageIndex], content: currentContent }
-			// Insert new page with overflow content
-			const newPage: PageData = {
-				id: generateId(),
-				content: overflowContent,
-				settings: { ...newPages[pageIndex].settings },
-			}
-			newPages.splice(pageIndex + 1, 0, newPage)
-			return newPages
-		})
-		setHasUnsavedChanges(true);
+    // Handle splitting overflow content to a new page
+    const handleSplitOverflow = useCallback((pageIndex: number, currentContent: string, overflowContent: string) => {
+        setPages((prev) => {
+            const newPages = [...prev]
+            // Update current page with trimmed content
+            newPages[pageIndex] = { ...newPages[pageIndex], content: currentContent }
+            // Insert new page with overflow content
+            const newPage: PageData = {
+                id: generateId(),
+                content: overflowContent,
+                settings: { ...newPages[pageIndex].settings },
+            }
+            newPages.splice(pageIndex + 1, 0, newPage)
+            return newPages
+        })
+        setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
-		toast.success("Content split to new page")
-	}, [])
+        toast.success("Content split to new page")
+    }, [])
 
-	// Split all overflowing pages
-	const splitAllOverflows = useCallback(() => {
-		setPages((prevPages) => {
-			const { pages: newPages, splitCount } = processPageOverflows(prevPages)
+    // Split all overflowing pages
+    const splitAllOverflows = useCallback(() => {
+        setPages((prevPages) => {
+            const { pages: newPages, splitCount } = processPageOverflows(prevPages)
 
-			if (splitCount > 0) {
-				toast.success(`Split ${splitCount} page${splitCount > 1 ? 's' : ''} to fix overflows`)
-			} else {
-				toast.info("No overflowing pages to split")
-			}
+            if (splitCount > 0) {
+                toast.success(`Split ${splitCount} page${splitCount > 1 ? 's' : ''} to fix overflows`)
+            } else {
+                toast.info("No overflowing pages to split")
+            }
 
-			return newPages
-		})
-		setHasUnsavedChanges(true);
+            return newPages
+        })
+        setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
-	}, [])
+    }, [])
 
-	// Handle editor focus to update the active editor in context
-	const handleEditorFocus = useCallback((ref: React.RefObject<MDXEditorMethods | null>, pageIndex: number) => {
-		setActiveEditor(ref)
-		setActivePageIndex(pageIndex)
-	}, [setActiveEditor, setActivePageIndex])
+    // Handle editor focus to update the active editor in context
+    const handleEditorFocus = useCallback((ref: React.RefObject<MDXEditorMethods | null>, pageIndex: number) => {
+        setActiveEditor(ref)
+        setActivePageIndex(pageIndex)
+    }, [setActiveEditor, setActivePageIndex])
 
-	const addTableOfContents = () => {
-		if (hasTableOfContents) {
-			toast.error("Table of Contents already exists")
-			return
-		}
+    const addTableOfContents = () => {
+        if (hasTableOfContents) {
+            toast.error("Table of Contents already exists")
+            return
+        }
 
-		// Generate Table of Contents based on headings in all pages
-		const headings: { title: string; page: number; level: number }[] = []
+        // Generate Table of Contents based on headings in all pages
+        const headings: { title: string; page: number; level: number }[] = []
 
-		pages.forEach((page, pageIndex) => {
-			// Skip if this is the table of contents page itself
-			if (page.isTableOfContents) return
+        pages.forEach((page, pageIndex) => {
+            // Skip if this is the table of contents page itself
+            if (page.isTableOfContents) return
 
-			const lines = page.content.split("\n")
-			lines.forEach((line, sectionIndex) => {
-				if (sectionIndex > 0) {
-					const trimmedLine = line.trim()
+            const lines = page.content.split("\n")
+            lines.forEach((line, sectionIndex) => {
+                if (sectionIndex > 0) {
+                    const trimmedLine = line.trim()
 
-					// Match headings - check from most specific (####) to least specific (#)
-					// to avoid false matches
-					if (trimmedLine.startsWith("#### ")) {
-						const title = trimmedLine.replace(/^####\s+/, "")
-						headings.push({ title, page: pageIndex + 2, level: 4 })
-					} else if (trimmedLine.startsWith("### ")) {
-						const title = trimmedLine.replace(/^###\s+/, "")
-						headings.push({ title, page: pageIndex + 2, level: 3 })
-					} else if (trimmedLine.startsWith("## ")) {
-						const title = trimmedLine.replace(/^##\s+/, "")
-						headings.push({ title, page: pageIndex + 2, level: 2 })
-					} else if (trimmedLine.startsWith("# ")) {
-						const title = trimmedLine.replace(/^#\s+/, "")
-						headings.push({ title, page: pageIndex + 2, level: 1 })
-					}
-				}
-			})
-		})
+                    // Match headings - check from most specific (####) to least specific (#)
+                    // to avoid false matches
+                    if (trimmedLine.startsWith("#### ")) {
+                        const title = trimmedLine.replace(/^####\s+/, "")
+                        headings.push({ title, page: pageIndex + 2, level: 4 })
+                    } else if (trimmedLine.startsWith("### ")) {
+                        const title = trimmedLine.replace(/^###\s+/, "")
+                        headings.push({ title, page: pageIndex + 2, level: 3 })
+                    } else if (trimmedLine.startsWith("## ")) {
+                        const title = trimmedLine.replace(/^##\s+/, "")
+                        headings.push({ title, page: pageIndex + 2, level: 2 })
+                    } else if (trimmedLine.startsWith("# ")) {
+                        const title = trimmedLine.replace(/^#\s+/, "")
+                        headings.push({ title, page: pageIndex + 2, level: 1 })
+                    }
+                }
+            })
+        })
 
-		// Configuration for ToC line formatting
-		const LINE_WIDTH = 70 // Total character width for each ToC line
-		const INDENT_SIZE = 4 // Spaces per indent level
-		const MIN_DOTS = 3 // Minimum dots between title and page number
+        // Configuration for ToC line formatting
+        const LINE_WIDTH = 70 // Total character width for each ToC line
+        const INDENT_SIZE = 4 // Spaces per indent level
+        const MIN_DOTS = 3 // Minimum dots between title and page number
 
-		// Helper function to create a properly formatted ToC line
-		const formatTocLine = (title: string, pageNum: number, level: number): string => {
-			const indent = " ".repeat((level - 1) * INDENT_SIZE)
-			const pageStr = pageNum.toString()
+        // Helper function to create a properly formatted ToC line
+        const formatTocLine = (title: string, pageNum: number, level: number): string => {
+            const indent = " ".repeat((level - 1) * INDENT_SIZE)
+            const pageStr = pageNum.toString()
 
-			// Calculate available space for dots
-			// Format: [indent][title] [dots] [pageNum]
-			const titleWithIndent = indent + title
-			const availableForDots = LINE_WIDTH - titleWithIndent.length - pageStr.length - 2 // -2 for spaces
-			const numDots = Math.max(MIN_DOTS, availableForDots)
-			const dots = ".".repeat(numDots)
+            // Calculate available space for dots
+            // Format: [indent][title] [dots] [pageNum]
+            const titleWithIndent = indent + title
+            const availableForDots = LINE_WIDTH - titleWithIndent.length - pageStr.length - 2 // -2 for spaces
+            const numDots = Math.max(MIN_DOTS, availableForDots)
+            const dots = ".".repeat(numDots)
 
-			// For H1 (level 1), make the title bold
-			if (level === 1) {
-				return `**${title}** ${dots} ${pageStr}`
-			}
+            // For H1 (level 1), make the title bold
+            if (level === 1) {
+                return `**${title}** ${dots} ${pageStr}`
+            }
 
-			return `${indent}${title} ${dots} ${pageStr}`;
-		}
+            return `${indent}${title} ${dots} ${pageStr}`;
+        }
 
-		// Generate markdown for Table of Contents with professional formatting
-		let tocContent = `# **Contents**\n\n`
-		tocContent += `---\n\n`
+        // Generate markdown for Table of Contents with professional formatting
+        let tocContent = `# **Contents**\n\n`
+        tocContent += `---\n\n`
 
-		if (headings.length === 0) {
-			tocContent += `*No headings found in the document.*\n\n`
-			tocContent += `*Add headings using # for H1, ## for H2, ### for H3, etc.*\n\n`
-		} else {
-			headings.forEach((heading) => {
-				const line = formatTocLine(heading.title, heading.page, heading.level)
-				tocContent += `${line}\n\n`
-			})
-		}
+        if (headings.length === 0) {
+            tocContent += `*No headings found in the document.*\n\n`
+            tocContent += `*Add headings using # for H1, ## for H2, ### for H3, etc.*\n\n`
+        } else {
+            headings.forEach((heading) => {
+                const line = formatTocLine(heading.title, heading.page, heading.level)
+                tocContent += `${line}\n\n`
+            })
+        }
 
-		tocContent += `---\n`
+        tocContent += `---\n`
 
-		// Insert ToC after the first page (cover page)
-		const tocPage: PageData = {
-			id: generateId(),
-			content: tocContent,
-			settings: { ...defaultPageSettings },
-			isTableOfContents: true,
-		}
+        // Insert ToC after the first page (cover page)
+        const tocPage: PageData = {
+            id: generateId(),
+            content: tocContent,
+            settings: { ...defaultPageSettings },
+            isTableOfContents: true,
+        }
 
-		setPages((prev) => {
-			const newPages = [...prev]
-			newPages.splice(1, 0, tocPage) // Insert after first page
-			return newPages
-		})
+        setPages((prev) => {
+            const newPages = [...prev]
+            newPages.splice(1, 0, tocPage) // Insert after first page
+            return newPages
+        })
 
-		setHasTableOfContents(true)
-		setHasUnsavedChanges(true);
+        setHasTableOfContents(true)
+        setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
-		toast.success("Table of Contents added after cover page")
-	};
+        toast.success("Table of Contents added after cover page")
+    };
 
-	useEffect(() => {
-		if (initialContent && pages.length === 0) {
-			const initialPages = initialContent.split(/\n---\n/).map((p: string) => ({
-				id: generateId(),
-				content: p.trim(),
-				settings: { ...defaultPageSettings },
-			}))
+    useEffect(() => {
+        if (initialContent && pages.length === 0) {
+            const initialPages = initialContent.split(/\n---\n/).map((p: string) => ({
+                id: generateId(),
+                content: p.trim(),
+                settings: { ...defaultPageSettings },
+            }))
 
-			const { pages: processedPages } = processPageOverflows(initialPages)
-			setPages(processedPages)
-		}
-	}, [initialContent, pages.length]);
-    	// Auto-save effect
-	useEffect(() => {
-		if (hasUnsavedChangesInThisStep) {
-			performAutoSave()
-		}
-	}, [hasUnsavedChangesInThisStep])
+            const { pages: processedPages } = processPageOverflows(initialPages)
+            setPages(processedPages)
+        }
+    }, [initialContent, pages.length]);
+    // Auto-save effect
+    useEffect(() => {
+        if (hasUnsavedChangesInThisStep) {
+            performAutoSave()
+        }
+    }, [hasUnsavedChangesInThisStep])
 
-	useEffect(() => {
-		if (isError) {
-			toast.error("Failed to load content")
-		}
-	}, [isError])
+    useEffect(() => {
+        if (isError) {
+            toast.error("Failed to load content")
+        }
+    }, [isError])
 
-    
+
     return (
-        <div className="flex-1 flex overflow-hidden">
+        <div className="h-full flex-1 flex overflow-hidden">
             {/* Chat panel - sits alongside entire Editor/Preview area */}
             <div
                 className={cn(
@@ -358,7 +358,7 @@ function StepFullAFSContent({
             </div>
 
             {/* Editor/Preview Tabs - fills remaining space */}
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex-1 flex flex-col min-w-0">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex-1 flex flex-col min-w-0 min-h-0">
                 <div className="border-b rounded-md flex items-center justify-between shrink-0">
                     <TooltipProvider>
                         <Tooltip>
@@ -480,7 +480,7 @@ function StepFullAFSContent({
 
                 {
                     (isLoading) ? (
-                        <div className="flex-1 flex flex-col overflow-hidden mt-2">
+                        <div className="flex-1 flex-col mt-2">
                             {/* Skeleton Toolbar */}
                             <div className="h-10 border-b bg-background/50 flex items-center px-4 gap-2 shrink-0">
                                 <Skeleton className="h-6 w-6 rounded" />
@@ -627,84 +627,88 @@ function StepFullAFSContent({
                     ) : (
 
                         <>
-                            <TabsContent
-                                value="edit"
-                                className="flex-1 flex flex-col mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
-                            >
-                                {/* Sticky Toolbar - Outside the transform container */}
-                                <StickyEditorToolbar />
-
-                                {/* Editor interface */}
-                                <div
-                                    className={cn(
-                                        "h-full flex-1 overflow-auto bg-muted/10 relative transition-all duration-300 ease-in-out"
-                                    )}
-                                >
-                                    <div
-                                        className="relative flex flex-col items-center py-8 min-h-full"
-                                        style={{
-                                            transform: `scale(${Number.parseInt(zoom) / 100})`,
-                                            transformOrigin: "top center",
-                                        }}
+                            {
+                                activeTab === "edit" ? (
+                                    <TabsContent
+                                        value="edit"
+                                        className="flex-1 flex flex-col mt-0 border-0 p-0 data-[state=inactive]:hidden min-h-0"
                                     >
-                                        {pages.map((pageData, index) => (
-                                            <PageEditor
-                                                key={pageData.id}
-                                                pageNumber={index + 1}
-                                                totalPages={pages.length}
-                                                content={pageData.content}
-                                                onChange={(content) => updatePage(index, content)}
-                                                onAddNext={() => addPage(index)}
-                                                onDelete={() => deletePage(index)}
-                                                onMoveUp={() => movePage(index, index - 1)}
-                                                onMoveDown={() => movePage(index, index + 1)}
-                                                settings={pageData.settings}
-                                                onSettingsChange={(settings) => updatePageSettings(index, settings)}
-                                                hideToolbar={true}
-                                                onEditorFocus={handleEditorFocus}
-                                                onSplitOverflow={(currentContent, overflowContent) => handleSplitOverflow(index, currentContent, overflowContent)}
-                                            />
-                                        ))}
+                                        {/* Sticky Toolbar - Outside the transform container */}
+                                        <StickyEditorToolbar />
 
-                                        <TooltipProvider>
-                                            <Tooltip>
-                                                <TooltipTrigger asChild>
-                                                    <Button
-                                                        variant="outline"
-                                                        // size="icon"
-                                                        className=" mb-12 h-12 rounded-full border-dashed bg-transparent"
-                                                        onClick={() => addPage(pages.length - 1)}
-                                                    >
-                                                        <Plus className="h-5 w-5" /> Add Page
-                                                    </Button>
-                                                </TooltipTrigger>
-                                                <TooltipContent>Add new page at the end</TooltipContent>
-                                            </Tooltip>
-                                        </TooltipProvider>
-                                    </div>
-                                </div>
-                            </TabsContent>
+                                        {/* Editor interface */}
+                                        <div
+                                            className={cn(
+                                                "flex-1 bg-muted/10 relative transition-all duration-300 ease-in-out overflow-auto min-h-0"
+                                            )}
+                                        >
+                                            <div
+                                                className="relative flex flex-col items-center py-8"
+                                                style={{
+                                                    transform: `scale(${Number.parseInt(zoom) / 100})`,
+                                                    transformOrigin: "top center",
+                                                }}
+                                            >
+                                                {pages.map((pageData, index) => (
+                                                    <PageEditor
+                                                        key={pageData.id}
+                                                        pageNumber={index + 1}
+                                                        totalPages={pages.length}
+                                                        content={pageData.content}
+                                                        onChange={(content) => updatePage(index, content)}
+                                                        onAddNext={() => addPage(index)}
+                                                        onDelete={() => deletePage(index)}
+                                                        onMoveUp={() => movePage(index, index - 1)}
+                                                        onMoveDown={() => movePage(index, index + 1)}
+                                                        settings={pageData.settings}
+                                                        onSettingsChange={(settings) => updatePageSettings(index, settings)}
+                                                        hideToolbar={true}
+                                                        onEditorFocus={handleEditorFocus}
+                                                        onSplitOverflow={(currentContent, overflowContent) => handleSplitOverflow(index, currentContent, overflowContent)}
+                                                    />
+                                                ))}
 
-                            <TabsContent
-                                value="preview"
-                                className="flex-1 mt-0 border-0 p-0 overflow-hidden data-[state=inactive]:hidden h-full"
-                            >
-                                <div className="h-full flex flex-col bg-muted/20">
-                                    <div
-                                        className="flex-1 overflow-auto p-6"
-                                        style={{
-                                            transform: `scale(${Number.parseInt(zoom) / 100})`,
-                                            transformOrigin: "top center",
-                                        }}
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                // size="icon"
+                                                                className=" mb-12 h-12 rounded-full border-dashed bg-transparent"
+                                                                onClick={() => addPage(pages.length - 1)}
+                                                            >
+                                                                <Plus className="h-5 w-5" /> Add Page
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Add new page at the end</TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                ) : (
+                                    <TabsContent
+                                        value="preview"
+                                        className="flex-1 mt-0 border-0 p-0 data-[state=inactive]:hidden min-h-0 overflow-auto"
                                     >
-                                        <A4Preview
-                                            orientation={defaultPageSettings.orientation}
-                                            content={fullContent}
-                                            onPageChange={setCurrentPage}
-                                        />
-                                    </div>
-                                </div>
-                            </TabsContent>
+                                        <div className="flex flex-col bg-muted/20">
+                                            <div
+                                                className="p-6"
+                                                style={{
+                                                    transform: `scale(${Number.parseInt(zoom) / 100})`,
+                                                    transformOrigin: "top center",
+                                                }}
+                                            >
+                                                <A4Preview
+                                                    orientation={defaultPageSettings.orientation}
+                                                    content={fullContent}
+                                                    onPageChange={setCurrentPage}
+                                                />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                )
+                            }
                         </>
                     )
                 }

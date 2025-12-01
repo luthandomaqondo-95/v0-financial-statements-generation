@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { motion } from "framer-motion"
-import { Calculator, Search, Filter, Download, Upload, ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, RefreshCw, ArrowUpDown, Layers } from "lucide-react"
+import { Calculator, Search, Filter, ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, RefreshCw, ArrowUpDown, Layers, Upload, Download, FileText } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
@@ -151,13 +151,34 @@ export function Step3GLAndTrial() {
                     animate={{ opacity: 1, y: 0 }}
                     className="mb-8"
                 >
-                    <div className="flex items-center gap-3 mb-2">
-                        <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
-                            <Calculator className="h-5 w-5 text-white" />
+                    <div className="flex items-center justify-between gap-3 mb-2">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg shadow-violet-500/20">
+                                <Calculator className="h-5 w-5 text-white" />
+                            </div>
+                            <div>
+                                <h1 className="text-2xl font-bold tracking-tight">Trial Balance Review</h1>
+                                <p className="text-muted-foreground text-sm">Review and verify your general ledger accounts</p>
+                            </div>
                         </div>
-                        <div>
-                            <h1 className="text-2xl font-bold tracking-tight">Trial Balance Review</h1>
-                            <p className="text-muted-foreground text-sm">Review and verify your general ledger accounts</p>
+
+                        <div className="flex gap-2">
+                            {/* <Button variant="outline" size="sm" className="h-10 gap-2">
+                                <Upload className="h-4 w-4" />
+                                Import
+                            </Button>
+                            <Button variant="outline" size="sm" className="h-10 gap-2">
+                                <Download className="h-4 w-4" />
+                                Export
+                            </Button> */}
+                            <Button variant="outline" size="sm" className="h-10 gap-2">
+                                <RefreshCw className="h-4 w-4" />
+                                Re-Generate
+                            </Button>
+                            <Button variant="default" size="sm" className="h-10 gap-2">
+                                <FileText className="h-4 w-4" />
+                                View GL
+                            </Button>
                         </div>
                     </div>
                 </motion.div>
@@ -284,22 +305,8 @@ export function Step3GLAndTrial() {
                                         <SelectItem value="Expenses">Expenses</SelectItem>
                                     </SelectContent>
                                 </Select>
-                                <div className="flex gap-2">
-                                    {/* <Button variant="outline" size="sm" className="h-10 gap-2">
-                                                <Upload className="h-4 w-4" />
-                                                Import
-                                            </Button>
-                                            <Button variant="outline" size="sm" className="h-10 gap-2">
-                                                <Download className="h-4 w-4" />
-                                                Export
-                                            </Button> */}
-                                    <Button variant="outline" size="sm" className="h-10 gap-2">
-                                        <RefreshCw className="h-4 w-4" />
-                                        Refresh
-                                    </Button>
-                                </div>
                             </div>
-                            <CardContent className="p-0 mt-4">
+                            <CardContent className="p-0 mt-0">
                                 <div className="overflow-x-auto">
                                     <table className="w-full">
                                         <thead className="overflow-hidden rounded-t-lg">

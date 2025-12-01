@@ -19,8 +19,8 @@ import { frameworkMapping, reverseFrameworkMapping } from "@/lib/definitions"
 
 
 const reportingFrameworks: ReportingFramework[] = [
-    { id: "ifrs-sme", name: "IFRS for SMEs", description: "International Financial Reporting Standard for Small and Medium-sized Entities", recommended: true },
-    { id: "ifrs-full", name: "Full IFRS", description: "Full International Financial Reporting Standards" },
+    { id: "ifrs-small", name: "IFRS for SMEs", description: "International Financial Reporting Standard for Small and Medium-sized Entities", recommended: true },
+    { id: "ifrs", name: "Full IFRS", description: "Full International Financial Reporting Standards" },
     { id: "sa-gaap", name: "SA GAAP", description: "South African Generally Accepted Accounting Practice" },
     { id: "micro", name: "Micro Entity", description: "Simplified reporting for micro entities" },
 ]
@@ -63,10 +63,6 @@ export function Step1Info({
         return [{ id: "1", name: "", designation: "Director", idNumber: "" }]
     })
 
-    const [selectedFramework, setSelectedFramework] = useState(() => {
-        const formFramework = projectInfoForm.getValues("reportingFramework")
-        return formFramework ? frameworkMapping[formFramework] || "ifrs-sme" : "ifrs-sme"
-    })
 
 
     const addDirector = () => {
@@ -96,14 +92,6 @@ export function Step1Info({
         }
     }, [directors, projectInfoForm, setHasUnsavedChanges])
 
-    // Sync reporting framework to form when it changes
-    useEffect(() => {
-        const formFramework = reverseFrameworkMapping[selectedFramework]
-        if (formFramework) {
-            projectInfoForm.setValue("reportingFramework", formFramework as "IFRS-SMALL" | "IFRS" | "GAAP" | "GRAP")
-            setHasUnsavedChanges(true)
-        }
-    }, [selectedFramework, projectInfoForm, setHasUnsavedChanges])
 
 
     return (
@@ -143,47 +131,180 @@ export function Step1Info({
                                     </div>
                                 </CardHeader>
                                 <CardContent>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                                        {reportingFrameworks.map((framework) => (
-                                            <motion.button
-                                                key={framework.id}
-                                                whileHover={{ scale: 1.01 }}
-                                                whileTap={{ scale: 0.99 }}
-                                                onClick={() => setSelectedFramework(framework.id)}
-                                                className={cn(
-                                                    "cursor-pointer relative p-4 rounded-xl border-2 text-left transition-all",
-                                                    selectedFramework === framework.id
-                                                        ? "border-primary bg-primary/5 shadow-md"
-                                                        : "border-transparent bg-muted/50 hover:bg-muted"
-                                                )}
-                                            >
-                                                {framework.recommended && (
-                                                    <span className="absolute -top-2 -right-2 flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500 text-white">
-                                                        <Sparkles className="h-3 w-3" />
-                                                        Recommended
-                                                    </span>
-                                                )}
-                                                <div className="flex items-start gap-3">
-                                                    <div className={cn(
-                                                        "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5",
-                                                        selectedFramework === framework.id
-                                                            ? "border-primary bg-primary"
-                                                            : "border-muted-foreground/30"
-                                                    )}>
-                                                        {selectedFramework === framework.id && (
-                                                            <Check className="h-3 w-3 text-primary-foreground" />
-                                                        )}
+                                    <FormField
+                                        control={projectInfoForm.control}
+                                        name="reportingFramework"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormControl>
+                                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                                                        {reportingFrameworks.map((framework) => {
+                                                            const isSelected = field.value ? frameworkMapping[field.value] === framework.id : false
+                                                            return (
+                                                                <motion.button
+                                                                    type="button"
+                                                                    key={framework.id}
+                                                                    whileHover={{ scale: 1.01 }}
+                                                                    whileTap={{ scale: 0.99 }}
+                                                                    onClick={() => {
+                                                                        const formValue = reverseFrameworkMapping[framework.id] as "ifrs-small" | "ifrs" | "sa-gaap" | "micro"
+                                                                        field.onChange(formValue)
+                                                                        setHasUnsavedChanges(true)
+                                                                    }}
+                                                                    className={cn(
+                                                                        "cursor-pointer relative p-4 rounded-xl border-2 text-left transition-all",
+                                                                        isSelected
+                                                                            ? "border-primary bg-primary/5 shadow-md"
+                                                                            : "border-transparent bg-muted/50 hover:bg-muted"
+                                                                    )}
+                                                                >
+                                                                    {framework.recommended && (
+                                                                        <span className="absolute -top-2 -right-2 flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500 text-white">
+                                                                            <Sparkles className="h-3 w-3" />
+                                                                            Recommended
+                                                                        </span>
+                                                                    )}
+                                                                    <div className="flex items-start gap-3">
+                                                                        <div className={cn(
+                                                                            "h-5 w-5 rounded-full border-2 flex items-center justify-center shrink-0 mt-0.5",
+                                                                            isSelected
+                                                                                ? "border-primary bg-primary"
+                                                                                : "border-muted-foreground/30"
+                                                                        )}>
+                                                                            {isSelected && (
+                                                                                <Check className="h-3 w-3 text-primary-foreground" />
+                                                                            )}
+                                                                        </div>
+                                                                        <div>
+                                                                            <p className="font-medium">{framework.name}</p>
+                                                                            <p className="text-xs text-muted-foreground mt-0.5">{framework.description}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </motion.button>
+                                                            )
+                                                        })}
                                                     </div>
-                                                    <div>
-                                                        <p className="font-medium">{framework.name}</p>
-                                                        <p className="text-xs text-muted-foreground mt-0.5">{framework.description}</p>
-                                                    </div>
-                                                </div>
-                                            </motion.button>
-                                        ))}
-                                    </div>
+                                                </FormControl>
+                                                <FormMessage className="text-red-400" />
+                                            </FormItem>
+                                        )}
+                                    />
                                 </CardContent>
                             </Card>
+
+                            {/* Fiscal Year Card */}
+                            <motion.div variants={itemVariants}>
+                                <Card className="border-0 shadow-lg shadow-black/5">
+                                    <CardHeader className="pb-4">
+                                        <div className="flex items-center gap-2">
+                                            <div className="h-8 w-8 rounded-lg bg-violet-50 dark:bg-violet-950 flex items-center justify-center">
+                                                <Calendar className="h-4 w-4 text-violet-600 dark:text-violet-400" />
+                                            </div>
+                                            <div>
+                                                <CardTitle className="text-lg">Financial Period</CardTitle>
+                                                <CardDescription>Year-end and reporting period</CardDescription>
+                                            </div>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="grid gap-6">
+                                        <div className="grid md:grid-cols-3 gap-4">
+                                            <FormField
+                                                control={projectInfoForm.control}
+                                                name="financialYear"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+                                                            Financial Year End <span className="text-red-500">*</span>
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <Input
+                                                                type="date"
+                                                                className="h-11"
+                                                                value={field.value ? new Date(field.value).toISOString().split('T')[0] : ""}
+                                                                onChange={(e) => {
+                                                                    const dateValue = e.target.value ? new Date(e.target.value) : undefined
+                                                                    field.onChange(dateValue)
+                                                                    setHasUnsavedChanges(true)
+                                                                }}
+                                                            />
+                                                        </FormControl>
+                                                        <FormMessage className="text-red-400" />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={projectInfoForm.control}
+                                                name="comparativePeriod"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+                                                            Comparative Period
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <Select
+                                                                value={field.value}
+                                                                onValueChange={(value) => {
+                                                                    field.onChange(value)
+                                                                    setHasUnsavedChanges(true)
+                                                                }}
+                                                            >
+                                                                <FormControl>
+                                                                    <SelectTrigger className="h-11 w-full">
+                                                                        <SelectValue placeholder="Select comparative period" />
+                                                                    </SelectTrigger>
+                                                                </FormControl>
+                                                                <SelectContent>
+                                                                    <SelectItem value="none">No comparatives</SelectItem>
+                                                                    <SelectItem value="1-year">1 year comparative</SelectItem>
+                                                                    <SelectItem value="2-year">2 year comparative</SelectItem>
+                                                                </SelectContent>
+                                                            </Select>
+                                                        </FormControl>
+                                                        <FormMessage className="text-red-400" />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={projectInfoForm.control}
+                                                name="currency"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+                                                            Currency <span className="text-red-500">*</span>
+                                                        </FormLabel>
+                                                        <Select
+                                                            value={field.value}
+                                                            onValueChange={(value) => {
+                                                                field.onChange(value)
+                                                                setHasUnsavedChanges(true)
+                                                            }}
+                                                        >
+                                                            <FormControl>
+                                                                <SelectTrigger className="h-11 w-full">
+                                                                    <SelectValue placeholder="Select currency" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="ZAR">South African Rand (ZAR)</SelectItem>
+                                                                <SelectItem value="USD">US Dollar (USD)</SelectItem>
+                                                                <SelectItem value="EUR">Euro (EUR)</SelectItem>
+                                                                <SelectItem value="GBP">British Pound (GBP)</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage className="text-red-400" />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                        </div>
+                                        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
+                                            <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+                                            <p className="text-sm text-amber-700 dark:text-amber-300">
+                                                The financial period is automatically calculated as 12 months ending on your year-end date.
+                                            </p>
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            </motion.div>
                         </motion.div>
 
 
@@ -211,6 +332,36 @@ export function Step1Info({
                                         <div className="grid md:grid-cols-2 gap-4">
                                             <FormField
                                                 control={projectInfoForm.control}
+                                                name="category"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+                                                            Business Category <span className="text-red-500">*</span>
+                                                        </FormLabel>
+                                                        <Select
+                                                            value={field.value}
+                                                            onValueChange={(value) => {
+                                                                field.onChange(value)
+                                                                setHasUnsavedChanges(true)
+                                                            }}
+                                                        >
+                                                            <FormControl>
+                                                                <SelectTrigger className="h-14 w-full">
+                                                                    <SelectValue placeholder="Select business category" />
+                                                                </SelectTrigger>
+                                                            </FormControl>
+                                                            <SelectContent>
+                                                                <SelectItem value="product">Product-based business</SelectItem>
+                                                                <SelectItem value="service">Service-based business</SelectItem>
+                                                                <SelectItem value="all">Any business activity</SelectItem>
+                                                            </SelectContent>
+                                                        </Select>
+                                                        <FormMessage className="text-red-400" />
+                                                    </FormItem>
+                                                )}
+                                            />
+                                            <FormField
+                                                control={projectInfoForm.control}
                                                 name="natureOfBusiness"
                                                 render={({ field }) => (
                                                     <FormItem>
@@ -232,6 +383,8 @@ export function Step1Info({
                                                     </FormItem>
                                                 )}
                                             />
+                                        </div>
+                                        <div className="grid md:grid-cols-2 gap-4">
                                             <FormField
                                                 control={projectInfoForm.control}
                                                 name="country"
@@ -250,34 +403,6 @@ export function Step1Info({
                                                                     setHasUnsavedChanges(true)
                                                                 }}
                                                             />
-                                                        </FormControl>
-                                                        <FormMessage className="text-red-400" />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                        <div className="grid md:grid-cols-3 gap-4">
-                                            <FormField
-                                                control={projectInfoForm.control}
-                                                name="auditor"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                            Auditor <span className="text-red-500">*</span>
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <div className="relative">
-                                                                <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                                                <Input
-                                                                    placeholder="Enter auditor name"
-                                                                    className="h-11 pl-10"
-                                                                    {...field}
-                                                                    onChange={(e) => {
-                                                                        field.onChange(e)
-                                                                        setHasUnsavedChanges(true)
-                                                                    }}
-                                                                />
-                                                            </div>
                                                         </FormControl>
                                                         <FormMessage className="text-red-400" />
                                                     </FormItem>
@@ -306,6 +431,35 @@ export function Step1Info({
                                                     </FormItem>
                                                 )}
                                             />
+
+                                        </div>
+                                        <div className="grid md:grid-cols-2 gap-4">
+                                            <FormField
+                                                control={projectInfoForm.control}
+                                                name="auditor"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">
+                                                            Auditor <span className="text-red-500">*</span>
+                                                        </FormLabel>
+                                                        <FormControl>
+                                                            <div className="relative">
+                                                                <FileCheck className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                                                <Input
+                                                                    placeholder="Enter auditor name"
+                                                                    className="h-11 pl-10"
+                                                                    {...field}
+                                                                    onChange={(e) => {
+                                                                        field.onChange(e)
+                                                                        setHasUnsavedChanges(true)
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        </FormControl>
+                                                        <FormMessage className="text-red-400" />
+                                                    </FormItem>
+                                                )}
+                                            />
                                             <FormField
                                                 control={projectInfoForm.control}
                                                 name="preparedBy"
@@ -329,118 +483,6 @@ export function Step1Info({
                                                     </FormItem>
                                                 )}
                                             />
-                                        </div>
-                                        <FormField
-                                            control={projectInfoForm.control}
-                                            name="category"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                        Business Category <span className="text-red-500">*</span>
-                                                    </FormLabel>
-                                                    <Select
-                                                        value={field.value}
-                                                        onValueChange={(value) => {
-                                                            field.onChange(value)
-                                                            setHasUnsavedChanges(true)
-                                                        }}
-                                                    >
-                                                        <FormControl>
-                                                            <SelectTrigger className="h-11">
-                                                                <SelectValue placeholder="Select business category" />
-                                                            </SelectTrigger>
-                                                        </FormControl>
-                                                        <SelectContent>
-                                                            <SelectItem value="product">Product-based business</SelectItem>
-                                                            <SelectItem value="service">Service-based business</SelectItem>
-                                                            <SelectItem value="all">Any business activity</SelectItem>
-                                                        </SelectContent>
-                                                    </Select>
-                                                    <FormMessage className="text-red-400" />
-                                                </FormItem>
-                                            )}
-                                        />
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-
-                            {/* Fiscal Year Card */}
-                            <motion.div variants={itemVariants}>
-                                <Card className="border-0 shadow-lg shadow-black/5">
-                                    <CardHeader className="pb-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="h-8 w-8 rounded-lg bg-violet-50 dark:bg-violet-950 flex items-center justify-center">
-                                                <Calendar className="h-4 w-4 text-violet-600 dark:text-violet-400" />
-                                            </div>
-                                            <div>
-                                                <CardTitle className="text-lg">Financial Period</CardTitle>
-                                                <CardDescription>Year-end and reporting period</CardDescription>
-                                            </div>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="grid gap-6">
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <FormField
-                                                control={projectInfoForm.control}
-                                                name="financialYear"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                            Financial Year End <span className="text-red-500">*</span>
-                                                        </FormLabel>
-                                                        <FormControl>
-                                                            <Input
-                                                                type="date"
-                                                                className="h-11"
-                                                                value={field.value ? new Date(field.value).toISOString().split('T')[0] : ""}
-                                                                onChange={(e) => {
-                                                                    const dateValue = e.target.value ? new Date(e.target.value) : undefined
-                                                                    field.onChange(dateValue)
-                                                                    setHasUnsavedChanges(true)
-                                                                }}
-                                                            />
-                                                        </FormControl>
-                                                        <FormMessage className="text-red-400" />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                            <FormField
-                                                control={projectInfoForm.control}
-                                                name="currency"
-                                                render={({ field }) => (
-                                                    <FormItem>
-                                                        <FormLabel className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                            Currency <span className="text-red-500">*</span>
-                                                        </FormLabel>
-                                                        <Select
-                                                            value={field.value}
-                                                            onValueChange={(value) => {
-                                                                field.onChange(value)
-                                                                setHasUnsavedChanges(true)
-                                                            }}
-                                                        >
-                                                            <FormControl>
-                                                                <SelectTrigger className="h-11">
-                                                                    <SelectValue placeholder="Select currency" />
-                                                                </SelectTrigger>
-                                                            </FormControl>
-                                                            <SelectContent>
-                                                                <SelectItem value="ZAR">South African Rand (ZAR)</SelectItem>
-                                                                <SelectItem value="USD">US Dollar (USD)</SelectItem>
-                                                                <SelectItem value="EUR">Euro (EUR)</SelectItem>
-                                                                <SelectItem value="GBP">British Pound (GBP)</SelectItem>
-                                                            </SelectContent>
-                                                        </Select>
-                                                        <FormMessage className="text-red-400" />
-                                                    </FormItem>
-                                                )}
-                                            />
-                                        </div>
-                                        <div className="flex items-center gap-2 p-3 rounded-lg bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-900">
-                                            <Calendar className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-                                            <p className="text-sm text-amber-700 dark:text-amber-300">
-                                                The financial period is automatically calculated as 12 months ending on your year-end date.
-                                            </p>
                                         </div>
                                     </CardContent>
                                 </Card>
@@ -603,90 +645,6 @@ export function Step1Info({
                                     </CardContent>
                                 </Card>
                             </motion.div>
-
-                            {/* Additional Options */}
-                            <motion.div variants={itemVariants}>
-                                <Card className="border-0 shadow-lg shadow-black/5">
-                                    <CardHeader className="pb-4">
-                                        <div className="flex items-center gap-2">
-                                            <div className="h-8 w-8 rounded-lg bg-cyan-50 dark:bg-cyan-950 flex items-center justify-center">
-                                                <Sparkles className="h-4 w-4 text-cyan-600 dark:text-cyan-400" />
-                                            </div>
-                                            <div>
-                                                <CardTitle className="text-lg">Additional Options</CardTitle>
-                                                <CardDescription>Customize your financial statements output</CardDescription>
-                                            </div>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="space-y-4">
-                                        <div className="grid md:grid-cols-2 gap-4">
-                                            <div className="space-y-2">
-                                                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                    Currency Display
-                                                </Label>
-                                                <Select defaultValue="zar">
-                                                    <SelectTrigger className="h-11">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="zar">South African Rand (ZAR)</SelectItem>
-                                                        <SelectItem value="usd">US Dollar (USD)</SelectItem>
-                                                        <SelectItem value="eur">Euro (EUR)</SelectItem>
-                                                        <SelectItem value="gbp">British Pound (GBP)</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                    Number Format
-                                                </Label>
-                                                <Select defaultValue="thousands">
-                                                    <SelectTrigger className="h-11">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="full">Full numbers</SelectItem>
-                                                        <SelectItem value="thousands">Thousands (R'000)</SelectItem>
-                                                        <SelectItem value="millions">Millions (R'm)</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                    Comparative Period
-                                                </Label>
-                                                <Select defaultValue="1-year">
-                                                    <SelectTrigger className="h-11">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="none">No comparatives</SelectItem>
-                                                        <SelectItem value="1-year">1 year comparative</SelectItem>
-                                                        <SelectItem value="2-year">2 year comparative</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                            <div className="space-y-2">
-                                                <Label className="text-xs uppercase tracking-wider text-muted-foreground">
-                                                    Page Size
-                                                </Label>
-                                                <Select defaultValue="a4">
-                                                    <SelectTrigger className="h-11">
-                                                        <SelectValue />
-                                                    </SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="a4">A4 (210 × 297 mm)</SelectItem>
-                                                        <SelectItem value="letter">Letter (8.5 × 11 in)</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            </motion.div>
-
-                            {/* Spacer for scroll */}
-                            <div className="h-8" />
                         </motion.div>
                     </form>
                 </Form>

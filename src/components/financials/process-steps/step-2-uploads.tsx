@@ -47,7 +47,11 @@ export function Step2Uploads({
     const [previewUrl, setPreviewUrl] = useState<string | null>(null)
     const [previewType, setPreviewType] = useState<string | null>(null)
     const [isDragging, setIsDragging] = useState(false);
-    const [existingDocuments, setExistingDocuments] = useState<any[]>([])
+    const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
+    const [isProcessingFirstFile, setIsProcessingFirstFile] = useState(false);
+    const [extractionQueue, setExtractionQueue] = useState<File[]>([]);
+    const [firstFileToExtract, setFirstFileToExtract] = useState<{ file: File, documentId: string, formData: FormData } | null>(null);
+    const [queuedFileToExtract, setQueuedFileToExtract] = useState<{ file: File, documentId: string, formData: FormData } | null>(null);
 
     // Track previous documents to avoid unnecessary updates
     const prevDocumentsRef = useRef<any[]>([])
@@ -96,7 +100,140 @@ export function Step2Uploads({
                 }
             }, 150)
         })
-    }, [])
+    }, []);
+    const uploadFile = async (file: File) => {
+        try {
+            // Get user session and business_id
+            // const sessionData: any = session?.user || null;
+            const group = {id:`1${project_id}`};//getActiveGroup(sessionData);
+
+            // Create FormData
+            const formData = new FormData();
+            formData.append('business_id', group?.id || '');
+            formData.append('file', file);
+            formData.append('project_id', project_id);
+            formData.append('uploadType', uploadSegment);
+
+            // Update progress to show upload starting
+            setUploadedFiles(prev => prev.map((f) =>
+                f.file.name === file.name && f.file.size === file.size ? { ...f, progress: 0 } : f
+            ));
+
+            // Upload file with real progress tracking using XMLHttpRequest
+            const uploadResponse: any = await new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                let uploadCompleted = false;
+
+                xhr.upload.addEventListener('progress', (event) => {
+                    if (event.lengthComputable) {
+                        const progress = Math.round((event.loaded / event.total) * 100);
+                        setUploadedFiles(prev => prev.map((f) =>
+                            f.file.name === file.name && f.file.size === file.size ? { ...f, progress: Math.max(progress, 1) } : f
+                        ));
+                        if (progress >= 100) {
+                            uploadCompleted = true;
+                        }
+                    }
+                });
+
+                xhr.addEventListener('load', () => {
+                    if (xhr.status >= 200 && xhr.status < 300) {
+                        try {
+                            const response = JSON.parse(xhr.responseText);
+                            resolve(response);
+                        } catch (error) {
+                            // If we can't parse JSON but upload completed, assume success
+                            if (uploadCompleted) {
+                                resolve({
+                                    success: true,
+                                    data: { id: 'unknown' },
+                                    msg: 'Upload completed but response parsing failed'
+                                });
+                            } else {
+                                resolve({ success: false, msg: 'Invalid response format', msg2: xhr.responseText });
+                            }
+                        }
+                    } else {
+                        // If upload completed but status is not 2xx, still consider it successful
+                        if (uploadCompleted) {
+                            resolve({
+                                success: true,
+                                data: { id: 'unknown' },
+                                msg: `Upload completed with status ${xhr.status}`
+                            });
+                        } else {
+                            reject(new Error(`HTTP ${xhr.status}: ${xhr.statusText}`));
+                        }
+                    }
+                });
+
+                xhr.addEventListener('error', (event) => {
+                    // If upload completed but we got a network error, assume success
+                    if (uploadCompleted) {
+                        resolve({
+                            success: true,
+                            data: { id: 'unknown' },
+                            msg: 'Upload completed despite network error'
+                        });
+                    } else {
+                        reject(new Error('Upload failed: Network error'));
+                    }
+                });
+
+                xhr.addEventListener('abort', () => {
+                    reject(new Error('Upload aborted'));
+                });
+
+                xhr.open('POST', `${process.env.NEXT_PUBLIC_APP_AUTH_ENDPOINT}/api/quotes-and-invoices/financials?appType=business&action=update`);
+                // xhr.setRequestHeader('Authorization', `Bearer ${sessionData?.accessToken}`);
+
+                xhr.send(formData);
+            });
+
+            if (!uploadResponse.success) {
+                throw new Error(uploadResponse.msg2 || uploadResponse.msg);
+            }
+
+            // Mark as uploaded
+            const documentId = (uploadResponse as any).data?.id;
+            setUploadedFiles(prev => prev.map((f) =>
+                f.file.name === file.name && f.file.size === file.size ? {
+                    ...f,
+                    progress: 100,
+                    documentId: documentId
+                } : f
+            ));
+
+            // Check if this is the first file to finish uploading
+            setIsProcessingFirstFile(prev => {
+                if (!prev) {
+                    // This is the first file to finish - prepare for extraction
+                    console.log('First file finished uploading:', file.name);
+                    setFirstFileToExtract({ file, documentId: documentId!, formData });
+                    return true;
+                } else {
+                    // Add to extraction queue for later processing
+                    console.log('Adding file to extraction queue:', file.name);
+                    setExtractionQueue(prevQueue => [...prevQueue, file]);
+                    return true;
+                }
+            });
+
+        } catch (error: any) {
+            setUploadedFiles(prev => prev.map((f) =>
+                f.file.name === file.name && f.file.size === file.size ? {
+                    ...f,
+                    progress: null,
+                    retry_func: () => uploadFile(file)
+                } : f
+            ));
+
+            toast.error("Upload failed", {
+                description: error.message || "An error occurred during upload"
+            });
+        }
+    };
+
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = e.target.files
