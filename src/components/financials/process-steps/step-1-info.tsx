@@ -49,7 +49,7 @@ export function Step1Info({
     setIsSaving: (isSaving: boolean) => void
     setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void
 }) {
-    // Initialize directors from form or use default
+    // Initialize directors from form or use default.
     const [directors, setDirectors] = useState<Director[]>(() => {
         const formDirectors = projectInfoForm.getValues("directors")
         if (formDirectors && formDirectors.length > 0) {
@@ -63,26 +63,23 @@ export function Step1Info({
         return [{ id: "1", name: "", designation: "Director", idNumber: "" }]
     })
 
-
-
     const addDirector = () => {
         setDirectors([
             ...directors,
             { id: Date.now().toString(), name: "", designation: "Director", idNumber: "" }
         ])
     }
-
     const removeDirector = (id: string) => {
         if (directors.length > 1) {
             setDirectors(directors.filter(d => d.id !== id))
         }
     }
-
     const updateDirector = (id: string, field: keyof Director, value: string) => {
         setDirectors(directors.map(d =>
             d.id === id ? { ...d, [field]: value } : d
         ))
     }
+
     // Sync directors to form when they change
     useEffect(() => {
         const directorNames = directors.map(d => d.name).filter(name => name.trim() !== "")
@@ -248,7 +245,7 @@ export function Step1Info({
                                                                     setHasUnsavedChanges(true)
                                                                 }}
                                                             >
-                                                                <FormControl>
+                      sibabalwe.ntoyi@appimate.com                                          <FormControl>
                                                                     <SelectTrigger className="h-11 w-full">
                                                                         <SelectValue placeholder="Select comparative period" />
                                                                     </SelectTrigger>

@@ -1,8 +1,7 @@
 "use client"
 
-import { useState, useEffect, useRef, use } from "react"
+import { useState, useEffect, useCallback, useRef, use } from "react"
 import { useRouter } from "next/navigation"
-import { useQuery } from "@tanstack/react-query";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,6 +15,8 @@ import { Step3GLAndTrial } from "@/components/financials/process-steps/step-3-gl
 import { Step4FS } from "@/components/financials/process-steps/step-4-fs";
 import { StepFullAFS } from "@/components/financials/process-steps/step-full-afs";
 import { projectInfoSchema } from "@/lib/definitions";
+import { toast } from "sonner";
+import { useDebounce } from "@/hooks/useDebouce";
 
 const slideVariants = {
 	enter: (direction: number) => ({
@@ -43,8 +44,8 @@ const totalSteps = steps.length;
 
 type Params = Promise<{ id: string }>
 export default function AFS(props: { params: Params }) {
-    const myParams = use(props.params);
-    const project_id = myParams?.id;
+	const myParams = use(props.params);
+	const project_id = myParams?.id;
 
 	const router = useRouter()
 
@@ -55,6 +56,21 @@ export default function AFS(props: { params: Params }) {
 	const [currentStep, setCurrentStep] = useState(0);
 	const [direction, setDirection] = useState(0); // 1 = forward, -1 = backward
 
+	// Use refs to avoid infinite loops in callbacks
+	const isSavingRef = useRef(false);
+	const currentStepRef = useRef(currentStep);
+
+	// Keep refs in sync with state
+	useEffect(() => {
+		isSavingRef.current = isSaving;
+	}, [isSaving]);
+
+	useEffect(() => {
+		currentStepRef.current = currentStep;
+	}, [currentStep]);
+
+	// Debounce the unsaved changes flag to prevent rapid-fire saves
+	const debouncedHasUnsavedChanges = useDebounce(hasUnsavedChanges, 1500);
 
 	const projectInfoForm = useForm<z.infer<typeof projectInfoSchema>>({
 		resolver: zodResolver(projectInfoSchema),
@@ -89,32 +105,138 @@ export default function AFS(props: { params: Params }) {
 		setCurrentStep(currentStep + 1)
 	}
 
-	const performAutoSave = async () => {
-		setIsSaving(true)
-		try {
-			if (currentStep === 0) {
-				// projectInfoForm.handleSubmit(onSubmit)
+	/**
+	 * Save project info data
+	 * This is called by auto-save and manual save
+	 */
+	const saveProjectInfo = useCallback(async (showToast: boolean = false): Promise<boolean> => {
+		const isValid = await projectInfoForm.trigger();
+
+		if (!isValid) {
+			if (showToast) {
+				const errors = projectInfoForm.formState.errors;
+				const errorMessages = Object.values(errors)
+					.map((error: any) => error.message)
+					.filter(Boolean)
+					.join("\n");
+
+				toast.error("Please fix the errors before saving", {
+					description: errorMessages,
+					duration: 3000
+				});
 			}
-			setLastSaved(new Date())
-			setHasUnsavedChanges(false)
+			return false;
+		}
+
+		const formData = projectInfoForm.getValues();
+
+		// TODO: Replace with actual API call when ready
+		// Example: await fetch(`/api/afs/${project_id}/project-info`, {
+		//     method: 'PUT',
+		//     body: JSON.stringify(formData)
+		// });
+
+		// For now, save to localStorage as a placeholder
+		if (project_id) {
+			localStorage.setItem(`afs-project-info-${project_id}`, JSON.stringify(formData));
+		}
+
+		if (showToast) {
+			toast.success("Project info saved successfully");
+		}
+
+		return true;
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [project_id]);
+
+	/**
+	 * Perform auto-save based on current step
+	 */
+	const performAutoSave = useCallback(async () => {
+		// Use ref to check current saving state without causing re-renders
+		if (isSavingRef.current) return;
+
+		setIsSaving(true);
+		isSavingRef.current = true;
+
+		try {
+			let saveSuccess = false;
+
+			if (currentStepRef.current === 0) {
+				saveSuccess = await saveProjectInfo(false);
+			} else {
+				// Handle other steps' auto-save here when implemented
+				saveSuccess = true;
+			}
+
+			if (saveSuccess) {
+				setLastSaved(new Date());
+				setHasUnsavedChanges(false);
+			}
 		} catch (error) {
-			console.error("Auto-save failed:", error)
+			console.error("Auto-save failed:", error);
+			toast.error("Auto-save failed. Please save manually.");
 		} finally {
-			setIsSaving(false)
+			setIsSaving(false);
+			isSavingRef.current = false;
 		}
-	}
+	}, [saveProjectInfo]);
 
+	/**
+	 * Manual save handler - shows toast feedback
+	 */
+	const handleManualSave = useCallback(async () => {
+		if (isSavingRef.current) return;
 
-	const handleManualSave = () => {
-		performAutoSave();
-	}
+		setIsSaving(true);
+		isSavingRef.current = true;
 
-	// Auto-save effect
+		try {
+			let saveSuccess = false;
+
+			if (currentStepRef.current === 0) {
+				saveSuccess = await saveProjectInfo(true);
+			} else {
+				// Handle other steps' manual save here
+				saveSuccess = true;
+			}
+
+			if (saveSuccess) {
+				setLastSaved(new Date());
+				setHasUnsavedChanges(false);
+			}
+		} catch (error) {
+			console.error("Save failed:", error);
+			toast.error("Failed to save. Please try again.");
+		} finally {
+			setIsSaving(false);
+			isSavingRef.current = false;
+		}
+	}, [saveProjectInfo]);
+
+	// Auto-save effect - triggers on debounced changes
 	useEffect(() => {
-		if (hasUnsavedChanges) {
-			performAutoSave()
+		if (debouncedHasUnsavedChanges) {
+			performAutoSave();
 		}
-	}, [hasUnsavedChanges])
+	}, [debouncedHasUnsavedChanges, performAutoSave]);
+
+	// Load saved project info on mount
+	useEffect(() => {
+		if (project_id) {
+			const savedData = localStorage.getItem(`afs-project-info-${project_id}`);
+			if (savedData) {
+				try {
+					const parsedData = JSON.parse(savedData);
+					// Reset form with saved data
+					projectInfoForm.reset(parsedData);
+				} catch (error) {
+					console.error("Failed to load saved project info:", error);
+				}
+			}
+		}
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [project_id])
 
 
 	return (
