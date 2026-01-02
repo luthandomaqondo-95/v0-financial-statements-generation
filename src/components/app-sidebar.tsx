@@ -27,10 +27,10 @@ const navigation = {
             url: "#",
             icon: FolderOpen,
             items: [
-                { title: "All Documents", url: "/documents" },
-                { title: "Drafts", url: "/documents/drafts" },
-                { title: "Under Review", url: "/documents/review" },
-                { title: "Finalized", url: "/documents/finalized" },
+                { title: "All Documents", url: "/dashboard/documents" },
+                { title: "Drafts", url: "/dashboard/documents/drafts" },
+                { title: "Under Review", url: "/dashboard/documents/review" },
+                { title: "Finalized", url: "/dashboard/documents/finalized" },
             ],
         },
         {
@@ -38,26 +38,26 @@ const navigation = {
             url: "#",
             icon: Sparkles,
             items: [
-                { title: "Generate Statement", url: "/editor" },
-                { title: "Templates", url: "/templates" },
-                { title: "History", url: "/ai/history" },
+                { title: "Generate Statement", url: "/dashboard/editor" },
+                { title: "Templates", url: "/dashboard/templates" },
+                { title: "History", url: "/dashboard/history" },
             ],
         },
         {
             title: "Recent",
-            url: "/recent",
+            url: "/dashboard/recent",
             icon: Clock,
         },
     ],
     workspace: [
         {
             title: "Companies",
-            url: "/companies",
+            url: "/dashboard/companies",
             icon: Building2,
         },
         {
             title: "Team",
-            url: "/team",
+            url: "/dashboard/team",
             icon: Users,
         },
         {
@@ -65,26 +65,26 @@ const navigation = {
             url: "#",
             icon: FileStack,
             items: [
-                { title: "Annual Reports", url: "/reports/annual" },
-                { title: "Management Accounts", url: "/reports/management" },
-                { title: "Tax Computations", url: "/reports/tax" },
+                { title: "Annual Reports", url: "/dashboard/reports/annual" },
+                { title: "Management Accounts", url: "/dashboard/reports/management" },
+                { title: "Tax Computations", url: "/dashboard/reports/tax" },
             ],
         },
         {
             title: "Calculations",
-            url: "/calculations",
+            url: "/dashboard/calculations",
             icon: Calculator,
         },
     ],
     other: [
         {
             title: "Settings",
-            url: "/settings",
+            url: "/dashboard/settings",
             icon: Settings,
         },
         {
             title: "Help & Support",
-            url: "/help",
+            url: "/dashboard/help",
             icon: HelpCircle,
         },
     ],
