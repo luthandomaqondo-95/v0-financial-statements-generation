@@ -1,19 +1,18 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { toast } from "sonner";
-import { useQuery } from "@tanstack/react-query";
-import { ChevronsLeft, ChevronsRight, List, Plus, Scissors, ZoomIn, ZoomOut } from "lucide-react";
-import type { LexicalEditor, RangeSelection } from "lexical";
 import { cn } from "@/lib/utils";
+import { ChevronsLeft, ChevronsRight, List, Plus, Scissors, ZoomIn, ZoomOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PageData, PageSettings } from "@/types/afs-types";
 import { LexicalEditorProvider, useLexicalEditorContext, LexicalPageEditor } from "@/components/lexical-editor";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { generateId, processPageOverflows } from "@/lib/utils/afs-utils";
+import type { LexicalEditor } from "lexical";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StickyLexicalEditorToolbar } from "@/components/lexical-editor/sticky-lexical-toolbar";
-import { A4Preview } from "@/components/financials/preview/a4-preview";
-import { ChatComponent } from "@/components/chat-component";
+import { A4Preview } from "../preview/a4-preview";
 
 
 
@@ -38,17 +37,15 @@ function StepFullAFSContent({
     // 	orientation: "portrait",
     // 	pages: 
     // })
-    const { activeEditorRef, setActiveEditor, setActivePageIndex } = useLexicalEditorContext();
+    const { setActiveEditor, setActivePageIndex } = useLexicalEditorContext();
 
     const [currentPage, setCurrentPage] = useState(1)
     const [zoom, setZoom] = useState("100")
+    const [activeTab, setActiveTab] = useState("mdx-editor")
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [pages, setPages] = useState<PageData[]>([])
     const [hasTableOfContents, setHasTableOfContents] = useState(false);
     const [hasUnsavedChangesInThisStep, setHasUnsavedChangesInThisStep] = useState(false);
-    const [selection, setSelection] = useState<{ text: string, start: number, end: number } | null>(null);
-    const [editingRange, setEditingRange] = useState<{ start: number, end: number } | null>(null);
-
 
     // Computed full content for preview/export
     const fullContent = useMemo(() => pages.map((p) => p.content).join("\n\n---\n\n"), [pages]);
@@ -63,25 +60,6 @@ function StepFullAFSContent({
         },
         staleTime: Number.POSITIVE_INFINITY,
     })
-
-    // Handle text selection
-    const handleMouseUp = (selection: RangeSelection) => {
-        // // console.log("selection", selection);
-        // console.log({
-        //     text: selection.toString().trim(),
-        //     start: selection.anchor.offset,
-        //     end: selection.focus.offset,
-        // })
-        setSelection({
-            text: selection.toString().trim(),
-            start: selection.anchor.offset,
-            end: selection.focus.offset,
-        });
-    };
-    const clearSelection = () => {
-        setSelection(null);
-        window.getSelection()?.removeAllRanges();
-    };
 
     const performAutoSave = useCallback(async () => {
         setIsSaving(true)
@@ -366,14 +344,13 @@ function StepFullAFSContent({
                 )}
             >
                 {isChatOpen && (
-                    <ChatComponent
-                        type="afs"
-                        project_id={project_id}
-                        llmContext={selection}
-                        setSelection={setSelection}
-                        setEditingRange={setEditingRange}
-                        clearSelection={clearSelection}
-                    />
+                    <div className="flex-1 flex flex-col p-4 w-[320px]">
+                        <h3 className="font-semibold text-sm mb-4">AI Assistant</h3>
+                        <div className="flex-1 text-sm text-muted-foreground">
+                            {/* Chat interface here */}
+                            Chat interface coming soon...
+                        </div>
+                    </div>
                 )}
             </div>
 
@@ -408,10 +385,7 @@ function StepFullAFSContent({
                     <div className=" items-center justify-between shrink-0">
                         <div className="flex items-center justify-between w-full">
                             <div className="flex items-center gap-4">
-                                <div className="text-sm text-muted-foreground">
-                                    {pages.length} page{pages.length !== 1 ? "s" : ""}
-                                </div>
-                                {/* <TooltipProvider>
+                                <TooltipProvider>
                                     <Tooltip>
                                         <TooltipTrigger asChild>
                                             <Button
@@ -428,7 +402,7 @@ function StepFullAFSContent({
                                             Automatically split all overflowing pages
                                         </TooltipContent>
                                     </Tooltip>
-                                </TooltipProvider> */}
+                                </TooltipProvider>
 
                                 <TooltipProvider>
                                     <Tooltip>
@@ -451,6 +425,9 @@ function StepFullAFSContent({
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider>
+                                <div className="text-sm text-muted-foreground">
+                                    {pages.length} page{pages.length !== 1 ? "s" : ""}
+                                </div>
                                 <div className="flex items-center gap-1">
                                     <Button
                                         variant="ghost"
@@ -654,7 +631,6 @@ function StepFullAFSContent({
                                             totalPages={pages.length}
                                             content={pageData.content}
                                             onChange={(content) => updatePage(index, content)}
-                                            onTextSelection={handleMouseUp}
                                             onAddNext={() => addPage(index)}
                                             onDelete={() => deletePage(index)}
                                             onMoveUp={() => movePage(index, index - 1)}

@@ -81,7 +81,7 @@ export function PDFExport({ content, filename = "financial-statement.pdf" }: PDF
       ) : (
         <>
           <Download className="h-4 w-4" />
-          Export PDF
+          Export
         </>
       )}
     </Button>

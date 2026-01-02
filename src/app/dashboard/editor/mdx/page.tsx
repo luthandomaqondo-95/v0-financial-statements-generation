@@ -13,7 +13,7 @@ import { Step1Info } from "@/components/financials/process-steps/step-1-info";
 import { Step2Uploads } from "@/components/financials/process-steps/step-2-uploads";
 import { Step3GLAndTrial } from "@/components/financials/process-steps/step-3-gl-and-trial";
 import { Step4FS } from "@/components/financials/process-steps/step-4-fs";
-import { StepFullAFS } from "@/components/financials/process-steps/step-full-afs";
+import { StepFullAFS } from "@/components/financials/process-steps/step-full-afs copy";
 import { projectInfoSchema } from "@/lib/definitions";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/useDebouce";

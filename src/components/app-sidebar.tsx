@@ -38,6 +38,8 @@ const navigation = {
             url: "#",
             icon: Sparkles,
             items: [
+                { title: "MDX Editor", url: "/dashboard/editor/mdx" },
+                { title: "Lexical Editor", url: "/dashboard/editor/lexical" },
                 { title: "Generate Statement", url: "/dashboard/editor" },
                 { title: "Templates", url: "/dashboard/templates" },
                 { title: "History", url: "/dashboard/history" },

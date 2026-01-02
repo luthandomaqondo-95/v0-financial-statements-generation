@@ -1193,11 +1193,11 @@ const defaultContent = [
 	// afsStrategicReport,
 	// afsCorporateGovernance,
 	// afsRiskManagement,
-	afsFinancialPosition,
-	afsDetailedNotes,
+	// afsFinancialPosition,
+	// afsDetailedNotes,
 	// afsFiveYearSummary,
 	// afsShareholderInfo,
-	afsCorporateDirectory,
+	// afsCorporateDirectory,
 ].join("\n\n---\n\n")
 
 export async function GET() {
