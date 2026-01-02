@@ -38,7 +38,7 @@ function StepFullAFSContent({
     // 	orientation: "portrait",
     // 	pages: 
     // })
-    const { activeEditorRef, setActiveEditor, setActivePageIndex } = useLexicalEditorContext();
+    const { activeEditorRef, setActiveEditor, setActivePageIndex, pushHistory, undo, redo, canUndo, canRedo } = useLexicalEditorContext();
 
     const [currentPage, setCurrentPage] = useState(1)
     const [zoom, setZoom] = useState("100")
@@ -109,6 +109,7 @@ function StepFullAFSContent({
         }))
 
         const { pages: processedPages, splitCount } = processPageOverflows(initialPages)
+        pushHistory(pages, hasTableOfContents); // Save current state before change
         setPages(processedPages)
         setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
@@ -141,6 +142,8 @@ function StepFullAFSContent({
 
 
     const addPage = (afterIndex: number) => {
+        pushHistory(pages, hasTableOfContents); // Save current state before change
+        
         const newPage: PageData = {
             id: generateId(),
             content: "# New Page\n\nStart writing here...",
@@ -164,6 +167,8 @@ function StepFullAFSContent({
             return
         }
 
+        pushHistory(pages, hasTableOfContents); // Save current state before change
+
         // Check if this is the table of contents page
         if (pages[index].isTableOfContents) {
             setHasTableOfContents(false)
@@ -178,6 +183,8 @@ function StepFullAFSContent({
     const movePage = (fromIndex: number, toIndex: number) => {
         if (toIndex < 0 || toIndex >= pages.length) return
 
+        pushHistory(pages, hasTableOfContents); // Save current state before change
+
         setPages((prev) => {
             const newPages = [...prev]
             const [movedPage] = newPages.splice(fromIndex, 1)
@@ -191,6 +198,8 @@ function StepFullAFSContent({
 
     // Handle splitting overflow content to a new page
     const handleSplitOverflow = useCallback((pageIndex: number, currentContent: string, overflowContent: string) => {
+        pushHistory(pages, hasTableOfContents); // Save current state before change
+        
         setPages((prev) => {
             const newPages = [...prev]
             // Update current page with trimmed content
@@ -207,10 +216,12 @@ function StepFullAFSContent({
         setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
         toast.success("Content split to new page")
-    }, [])
+    }, [pages, hasTableOfContents, pushHistory])
 
     // Split all overflowing pages
     const splitAllOverflows = useCallback(() => {
+        pushHistory(pages, hasTableOfContents); // Save current state before change
+        
         setPages((prevPages) => {
             const { pages: newPages, splitCount } = processPageOverflows(prevPages)
 
@@ -224,7 +235,7 @@ function StepFullAFSContent({
         })
         setHasUnsavedChanges(true);
         setHasUnsavedChangesInThisStep(true);
-    }, [])
+    }, [pages, hasTableOfContents, pushHistory])
 
     // Handle editor focus to update the active editor in context
     const handleEditorFocus = useCallback((ref: React.RefObject<LexicalEditor | null>, pageIndex: number) => {
@@ -232,11 +243,61 @@ function StepFullAFSContent({
         setActivePageIndex(pageIndex)
     }, [setActiveEditor, setActivePageIndex])
 
+    // Handle page-level undo
+    const handlePageUndo = useCallback(() => {
+        const previousState = undo();
+        if (previousState) {
+            setPages(previousState.pages);
+            setHasTableOfContents(previousState.hasTableOfContents);
+            toast.success("Undo successful");
+        }
+    }, [undo]);
+
+    // Handle page-level redo
+    const handlePageRedo = useCallback(() => {
+        const nextState = redo();
+        if (nextState) {
+            setPages(nextState.pages);
+            setHasTableOfContents(nextState.hasTableOfContents);
+            toast.success("Redo successful");
+        }
+    }, [redo]);
+
+    // Keyboard shortcuts for page-level undo/redo
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Only handle if Ctrl/Cmd is pressed
+            if (!(e.ctrlKey || e.metaKey)) return;
+
+            // Check if we're in an input, textarea, or contenteditable
+            const target = e.target as HTMLElement;
+            const isInEditor = target.tagName === 'INPUT' || 
+                             target.tagName === 'TEXTAREA' || 
+                             target.isContentEditable;
+
+            // If in an editor, let Lexical handle its own undo/redo
+            if (isInEditor) return;
+
+            if (e.key === 'z' && !e.shiftKey) {
+                e.preventDefault();
+                handlePageUndo();
+            } else if ((e.key === 'y') || (e.key === 'z' && e.shiftKey)) {
+                e.preventDefault();
+                handlePageRedo();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [handlePageUndo, handlePageRedo]);
+
     const addTableOfContents = () => {
         if (hasTableOfContents) {
             toast.error("Table of Contents already exists")
             return
         }
+
+        pushHistory(pages, hasTableOfContents); // Save current state before change
 
         // Generate Table of Contents based on headings in all pages
         const headings: { title: string; page: number; level: number }[] = []
@@ -340,8 +401,10 @@ function StepFullAFSContent({
 
             const { pages: processedPages } = processPageOverflows(initialPages)
             setPages(processedPages)
+            // Push initial state to history
+            pushHistory(processedPages, false)
         }
-    }, [initialContent, pages.length]);
+    }, [initialContent, pages.length, pushHistory]);
     // Auto-save effect
     useEffect(() => {
         if (hasUnsavedChangesInThisStep) {
@@ -403,12 +466,17 @@ function StepFullAFSContent({
                         </Tooltip>
                     </TooltipProvider>
 
-                    <StickyLexicalEditorToolbar />
+                    <StickyLexicalEditorToolbar 
+                        onPageUndo={handlePageUndo}
+                        onPageRedo={handlePageRedo}
+                        canPageUndo={canUndo}
+                        canPageRedo={canRedo}
+                    />
 
                     <div className=" items-center justify-between shrink-0">
                         <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-4">
-                                <div className="text-sm text-muted-foreground">
+                            <div className="flex items-center gap-4 mt-2 h-full">
+                                <div className="hidden text-sm text-muted-foreground">
                                     {pages.length} page{pages.length !== 1 ? "s" : ""}
                                 </div>
                                 {/* <TooltipProvider>
@@ -429,28 +497,6 @@ function StepFullAFSContent({
                                         </TooltipContent>
                                     </Tooltip>
                                 </TooltipProvider> */}
-
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className={`gap-2 bg-transparent ${hasTableOfContents ? "opacity-50" : ""}`}
-                                                onClick={addTableOfContents}
-                                                disabled={hasTableOfContents}
-                                            >
-                                                <List className="h-4 w-4" />
-                                                Add Contents
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            {hasTableOfContents
-                                                ? "Table of Contents already added"
-                                                : "Add Table of Contents after cover page"}
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
                                 <div className="flex items-center gap-1">
                                     <Button
                                         variant="ghost"
@@ -462,7 +508,7 @@ function StepFullAFSContent({
                                     </Button>
                                     <Select value={zoom} onValueChange={setZoom}>
                                         <SelectTrigger className="w-[70px] h-7 text-xs">
-                                            <SelectValue />
+                                            <SelectValue>{zoom}%</SelectValue>
                                         </SelectTrigger>
                                         <SelectContent>
                                             <SelectItem value="50">50%</SelectItem>

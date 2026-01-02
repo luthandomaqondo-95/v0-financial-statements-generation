@@ -51,7 +51,7 @@ export default function AFS(props: { params: Params }) {
 	const router = useRouter()
 
 
-	const [projectName, setProjectName] = useState("Untitled Document")
+	const [projectName, setProjectName] = useState("Untitled Project")
 	const [isSaving, setIsSaving] = useState(false)
 	const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
 	const [lastSaved, setLastSaved] = useState<Date | null>(null)
@@ -256,7 +256,7 @@ export default function AFS(props: { params: Params }) {
 						value={projectName}
 						onChange={(e) => setProjectName(e.target.value)}
 						className="text-lg font-medium bg-transparent border-none outline-none focus:outline-none px-2 py-1 rounded hover:bg-muted/50 focus:bg-muted/50"
-						placeholder="Untitled Document"
+						placeholder="Untitled Project"
 					/>
 				</div>
 

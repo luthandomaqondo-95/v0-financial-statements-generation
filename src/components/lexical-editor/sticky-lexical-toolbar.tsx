@@ -12,13 +12,22 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { $createTableOfContentsNode } from "./nodes/TableOfContentsNode";
+import { $createTableOfContentsNode } from "@/components/lexical-editor/nodes/TableOfContentsNode";
 import { toast } from "sonner";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 export function StickyLexicalEditorToolbar({
     className,
+    onPageUndo,
+    onPageRedo,
+    canPageUndo,
+    canPageRedo,
 }: {
     className?: string;
+    onPageUndo?: () => void;
+    onPageRedo?: () => void;
+    canPageUndo?: boolean;
+    canPageRedo?: boolean;
 }) {
     const { activeEditorRef } = useLexicalEditorContext();
     const [isBold, setIsBold] = useState(false);
@@ -38,16 +47,6 @@ export function StickyLexicalEditorToolbar({
             }
         });
     }, [activeEditorRef]);
-
-    useEffect(() => {
-        if (!activeEditorRef?.current) return;
-
-        return activeEditorRef.current.registerUpdateListener(({ editorState }) => {
-            editorState.read(() => {
-                updateToolbar();
-            });
-        });
-    }, [activeEditorRef, updateToolbar]);
 
     const formatText = (format: "bold" | "italic" | "underline") => {
         if (!activeEditorRef?.current) return;
@@ -110,18 +109,78 @@ export function StickyLexicalEditorToolbar({
         }
     };
 
-    if (!activeEditorRef?.current) {
-        return null;
-    }
+    const handleUndo = () => {
+        // Try content-level undo first if there's an active editor
+        if (activeEditorRef?.current) {
+            activeEditorRef.current.dispatchCommand(UNDO_COMMAND, undefined);
+        };
+        if (onPageUndo) {
+            // Fall back to page-level undo
+            onPageUndo();
+        }
+    };
+
+    const handleRedo = () => {
+        // Try content-level redo first if there's an active editor
+        if (activeEditorRef?.current) {
+            activeEditorRef.current.dispatchCommand(REDO_COMMAND, undefined);
+        };
+        if (onPageRedo) {
+            // Fall back to page-level redo
+            onPageRedo();
+        }
+    };
+
+
+    useEffect(() => {
+        if (!activeEditorRef?.current) return;
+
+        return activeEditorRef.current.registerUpdateListener(({ editorState }) => {
+            editorState.read(() => {
+                updateToolbar();
+            });
+        });
+    }, [activeEditorRef, updateToolbar]);
 
     return (
         <div className={cn("flex items-center gap-1 p-2", className)}>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => activeEditorRef.current?.dispatchCommand(UNDO_COMMAND, undefined)}>
-                <Undo className="h-4 w-4" />
-            </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => activeEditorRef.current?.dispatchCommand(REDO_COMMAND, undefined)}>
-                <Redo className="h-4 w-4" />
-            </Button>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            onClick={handleUndo}
+                            disabled={!activeEditorRef?.current && !canPageUndo}
+                        >
+                            <Undo className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        {(activeEditorRef && activeEditorRef.current) ? "Undo content change (Ctrl+Z)" : "Undo page operation (Ctrl+Z)"}
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
+            
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-8 w-8" 
+                            onClick={handleRedo}
+                            disabled={!activeEditorRef?.current && !canPageRedo}
+                        >
+                            <Redo className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        {(activeEditorRef && activeEditorRef.current) ? "Redo content change (Ctrl+Y)" : "Redo page operation (Ctrl+Y)"}
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
 
             <Separator orientation="vertical" className="mx-1 h-6" />
 
@@ -186,16 +245,28 @@ export function StickyLexicalEditorToolbar({
 
             <Separator orientation="vertical" className="mx-1 h-6" />
 
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => activeEditorRef.current?.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => activeEditorRef?.current?.dispatchCommand(INSERT_UNORDERED_LIST_COMMAND, undefined)}>
                 <List className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => activeEditorRef.current?.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)}>
+            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => activeEditorRef?.current?.dispatchCommand(INSERT_ORDERED_LIST_COMMAND, undefined)}>
                 <ListOrdered className="h-4 w-4" />
             </Button>
+
             <Separator orientation="vertical" className="mx-1 h-6" />
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={insertTableOfContents} title="Insert Table of Contents">
-                <BookOpen className="h-4 w-4" />
-            </Button>
+
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button variant="ghost" className="h-8 cursor-pointer" onClick={insertTableOfContents} title="Insert Table of Contents">
+                            <BookOpen className="h-4 w-4" />
+                            Contents
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        Add Table of Contents after cover page.
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
         </div>
     );
 }
