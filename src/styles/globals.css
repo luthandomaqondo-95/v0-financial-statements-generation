@@ -557,3 +557,133 @@
 .sticky-lexical-toolbar-light button:disabled svg {
     color: #9ca3af !important;
 }
+
+/* AI Edit Effects - Canvas and Cursor Style Animations */
+
+/* Canvas-style: Yellow highlight for pending edits */
+.ai-highlight-pending {
+    background-color: #fef3c7 !important;
+    border-left: 3px solid #f59e0b !important;
+    padding-left: 0.75rem !important;
+    transition: all 300ms ease-in-out;
+    animation: ai-pulse-pending 2s ease-in-out infinite;
+}
+
+@keyframes ai-pulse-pending {
+    0%, 100% {
+        background-color: #fef3c7;
+    }
+    50% {
+        background-color: #fde68a;
+    }
+}
+
+/* Cursor-style: Blue highlight with streaming effect for active edits */
+.ai-editing-active {
+    background-color: #dbeafe !important;
+    border-left: 4px solid #3b82f6 !important;
+    padding-left: 0.75rem !important;
+    transition: all 200ms ease-in-out;
+    position: relative;
+}
+
+.ai-editing-active::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 1rem;
+    background-color: #3b82f6;
+    animation: ai-cursor-blink 1s step-end infinite;
+}
+
+@keyframes ai-cursor-blink {
+    0%, 50% {
+        opacity: 1;
+    }
+    51%, 100% {
+        opacity: 0;
+    }
+}
+
+/* Fade out effect after edit completes */
+.ai-editing-complete {
+    animation: ai-fade-out 500ms ease-out forwards;
+}
+
+@keyframes ai-fade-out {
+    from {
+        background-color: #dbeafe;
+        border-left-color: #3b82f6;
+    }
+    to {
+        background-color: transparent;
+        border-left-color: transparent;
+    }
+}
+
+/* Streaming text indicator */
+.ai-streaming-indicator {
+    display: inline-block;
+    width: 0.5rem;
+    height: 1rem;
+    background-color: #3b82f6;
+    margin-left: 0.125rem;
+    animation: ai-cursor-blink 1s step-end infinite;
+}
+
+/* Smooth transitions for all AI effects */
+.ai-highlight-pending,
+.ai-editing-active,
+.ai-editing-complete {
+    will-change: background-color, border-left-color;
+}
+
+/* Dark mode support for AI effects */
+.dark .ai-highlight-pending {
+    background-color: #78350f !important;
+    border-left-color: #f59e0b !important;
+}
+
+@keyframes ai-pulse-pending-dark {
+    0%, 100% {
+        background-color: #78350f;
+    }
+    50% {
+        background-color: #92400e;
+    }
+}
+
+.dark .ai-highlight-pending {
+    animation: ai-pulse-pending-dark 2s ease-in-out infinite;
+}
+
+.dark .ai-editing-active {
+    background-color: #1e3a8a !important;
+    border-left-color: #3b82f6 !important;
+}
+
+.dark .ai-editing-active::after {
+    background-color: #60a5fa;
+}
+
+@keyframes ai-fade-out-dark {
+    from {
+        background-color: #1e3a8a;
+        border-left-color: #3b82f6;
+    }
+    to {
+        background-color: transparent;
+        border-left-color: transparent;
+    }
+}
+
+.dark .ai-editing-complete {
+    animation: ai-fade-out-dark 500ms ease-out forwards;
+}
+
+.dark .ai-streaming-indicator {
+    background-color: #60a5fa;
+}

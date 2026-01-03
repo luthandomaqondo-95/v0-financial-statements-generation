@@ -30,6 +30,7 @@ import { EditorRefPlugin } from "./plugins/EditorRefPlugin";
 import { TextSelectionPlugin } from "./plugins/TextSelectionPlugin";
 import { TableOfContentsPlugin } from "./plugins/TableOfContentsPlugin";
 import { HeadingAttributePlugin } from "./plugins/HeadingAttributePlugin";
+import { AIEditPlugin } from "./plugins/AIEditPlugin";
 import { TableOfContentsNode } from "./nodes/TableOfContentsNode";
 
 const editorConfig = {
@@ -364,6 +365,7 @@ export function LexicalPageEditor({
                             <TextSelectionPlugin onTextSelection={onTextSelection} />
                             <TableOfContentsPlugin />
                             <HeadingAttributePlugin />
+                            <AIEditPlugin />
                             <EditorRefPlugin 
                                 editorRef={editorRef} 
                                 onEditorFocus={onEditorFocus} 

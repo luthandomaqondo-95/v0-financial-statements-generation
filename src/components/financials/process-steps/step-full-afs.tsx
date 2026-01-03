@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Activity, useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useQuery } from "@tanstack/react-query";
 import { ChevronsLeft, ChevronsRight, List, Plus, Scissors, ZoomIn, ZoomOut } from "lucide-react";
@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { StickyLexicalEditorToolbar } from "@/components/lexical-editor/sticky-lexical-toolbar";
 import { A4Preview } from "@/components/financials/preview/a4-preview";
 import { ChatComponent } from "@/components/chat-component";
+import { findTextInMarkdown } from "@/lib/markdown-utils";
 
 
 
@@ -64,19 +65,33 @@ function StepFullAFSContent({
         staleTime: Number.POSITIVE_INFINITY,
     })
 
-    // Handle text selection
+    // Handle text selection (markdown-based positions)
     const handleMouseUp = (selection: RangeSelection) => {
-        // // console.log("selection", selection);
-        // console.log({
-        //     text: selection.toString().trim(),
-        //     start: selection.anchor.offset,
-        //     end: selection.focus.offset,
-        // })
-        setSelection({
-            text: selection.toString().trim(),
-            start: selection.anchor.offset,
-            end: selection.focus.offset,
-        });
+        // Extract actual text content from selection
+        const selectedText = selection.getTextContent();
+        const currentPageMarkdown = pages[currentPage - 1]?.content || "";
+
+        // Find position in markdown
+        const markdownPos = findTextInMarkdown(
+            currentPageMarkdown,
+            selectedText,
+            { start: selection.anchor.offset, end: selection.focus.offset }
+        );
+
+        if (markdownPos) {
+            setSelection({
+                text: selectedText,
+                start: markdownPos.startOffset,
+                end: markdownPos.endOffset,
+            });
+        } else {
+            // Fallback to lexical positions if markdown mapping fails
+            setSelection({
+                text: selectedText,
+                start: selection.anchor.offset,
+                end: selection.focus.offset,
+            });
+        }
     };
     const clearSelection = () => {
         setSelection(null);
@@ -143,7 +158,7 @@ function StepFullAFSContent({
 
     const addPage = (afterIndex: number) => {
         pushHistory(pages, hasTableOfContents); // Save current state before change
-        
+
         const newPage: PageData = {
             id: generateId(),
             content: "# New Page\n\nStart writing here...",
@@ -199,7 +214,7 @@ function StepFullAFSContent({
     // Handle splitting overflow content to a new page
     const handleSplitOverflow = useCallback((pageIndex: number, currentContent: string, overflowContent: string) => {
         pushHistory(pages, hasTableOfContents); // Save current state before change
-        
+
         setPages((prev) => {
             const newPages = [...prev]
             // Update current page with trimmed content
@@ -221,7 +236,7 @@ function StepFullAFSContent({
     // Split all overflowing pages
     const splitAllOverflows = useCallback(() => {
         pushHistory(pages, hasTableOfContents); // Save current state before change
-        
+
         setPages((prevPages) => {
             const { pages: newPages, splitCount } = processPageOverflows(prevPages)
 
@@ -271,9 +286,9 @@ function StepFullAFSContent({
 
             // Check if we're in an input, textarea, or contenteditable
             const target = e.target as HTMLElement;
-            const isInEditor = target.tagName === 'INPUT' || 
-                             target.tagName === 'TEXTAREA' || 
-                             target.isContentEditable;
+            const isInEditor = target.tagName === 'INPUT' ||
+                target.tagName === 'TEXTAREA' ||
+                target.isContentEditable;
 
             // If in an editor, let Lexical handle its own undo/redo
             if (isInEditor) return;
@@ -428,16 +443,18 @@ function StepFullAFSContent({
                     isChatOpen ? "w-[450px]" : "w-0 border-r-0"
                 )}
             >
-                {isChatOpen && (
+                <Activity mode={isChatOpen ? "visible" : "hidden"}>
                     <ChatComponent
                         type="afs"
                         project_id={project_id}
                         llmContext={selection}
+                        currentPageMarkdown={pages[currentPage - 1]?.content || ""}
                         setSelection={setSelection}
                         setEditingRange={setEditingRange}
                         clearSelection={clearSelection}
                     />
-                )}
+                </Activity>
+
             </div>
 
             {/* Editor/Preview Tabs - fills remaining space */}
@@ -466,7 +483,7 @@ function StepFullAFSContent({
                         </Tooltip>
                     </TooltipProvider>
 
-                    <StickyLexicalEditorToolbar 
+                    <StickyLexicalEditorToolbar
                         onPageUndo={handlePageUndo}
                         onPageRedo={handlePageRedo}
                         canPageUndo={canUndo}

@@ -3,6 +3,7 @@
 import { createContext, useContext, useState, useCallback, type ReactNode, type RefObject } from "react";
 import type { LexicalEditor } from "lexical";
 import { PageData } from "@/types/afs-types";
+import { AIEditState } from "@/types/ai-types";
 
 interface PageHistoryEntry {
     pages: PageData[];
@@ -21,6 +22,9 @@ interface EditorContextType {
     canUndo: boolean;
     canRedo: boolean;
     clearHistory: () => void;
+    // AI editing state
+    aiEditState: AIEditState | null;
+    setAIEditState: (state: AIEditState | null) => void;
 }
 
 const EditorContext = createContext<EditorContextType | null>(null);
@@ -34,6 +38,9 @@ export function LexicalEditorProvider({ children }: { children: ReactNode }) {
     // Page-level history management
     const [history, setHistory] = useState<PageHistoryEntry[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
+
+    // AI editing state
+    const [aiEditState, setAIEditState] = useState<AIEditState | null>(null);
 
     const setActiveEditor = useCallback((ref: RefObject<LexicalEditor | null> | null) => {
         setActiveEditorRef(ref);
@@ -90,6 +97,8 @@ export function LexicalEditorProvider({ children }: { children: ReactNode }) {
                 canUndo,
                 canRedo,
                 clearHistory,
+                aiEditState,
+                setAIEditState,
             }}
         >
             {children}
