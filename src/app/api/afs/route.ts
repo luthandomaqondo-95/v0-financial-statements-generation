@@ -1188,18 +1188,18 @@ United Kingdom
 const defaultContent = [
 	afsCoverPage,
 	afsCompanyInfo,
-	afsChairmanStatement,
+	// afsChairmanStatement,
 	afsCEOReport,
-	afsStrategicReport,
-	afsCorporateGovernance,
-	afsRiskManagement,
+	// afsStrategicReport,
+	// afsCorporateGovernance,
+	// afsRiskManagement,
 	afsFinancialPosition,
 	afsDetailedNotes,
-	afsFiveYearSummary,
-	afsShareholderInfo,
+	// afsFiveYearSummary,
+	// afsShareholderInfo,
 	afsCorporateDirectory,
 ].join("\n\n---\n\n")
 
 export async function GET() {
-    return NextResponse.json({ content: defaultContent })
+	return NextResponse.json({ content: defaultContent })
 }

@@ -1,18 +1,25 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { cn } from "@/lib/utils";
-import { ChevronsLeft, ChevronsRight, List, Plus, Scissors, ZoomIn, ZoomOut } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { PageData, PageSettings } from "@/types/afs-types";
-import { LexicalEditorProvider, useLexicalEditorContext, LexicalPageEditor } from "@/components/lexical-editor";
+import { Activity, useCallback, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { ChevronsLeft, ChevronsRight, Edit, Eye, List, Plus, RefreshCcw, Scissors, ZoomIn, ZoomOut } from "lucide-react";
+import { PageData, PageSettings } from "@/types/afs-types";
+import { cn } from "@/lib/utils";
 import { generateId, processPageOverflows } from "@/lib/utils/afs-utils";
 import type { LexicalEditor } from "lexical";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+// import { PDFExport } from "@/components/financials/pdf-export";
+import { EditorProvider, useEditorContext } from "@/components/mdx-editor/editor-context";
+import { StickyEditorToolbar } from "@/components/mdx-editor/sticky-editor-toolbar";
+import { PageEditor } from "@/components/financials/editor/page-editor";
+import { A4Preview } from "@/components/financials/preview/a4-preview";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StickyLexicalEditorToolbar } from "@/components/lexical-editor/sticky-lexical-toolbar";
-import { A4Preview } from "../preview/a4-preview";
+import { Button } from "@/components/ui/button";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ChatComponent } from "@/components/chat-component";
+import { MDXEditorMethods } from "@mdxeditor/editor";
+// import { afsFlowStatuses } from "@/lib/definitions/afs";
+// import { APIResponse } from "@/lib/definitions";
 
 
 
@@ -22,26 +29,32 @@ const defaultPageSettings: PageSettings = {
 }
 
 
-export function StepFullAFS({ project_id, setIsSaving, setHasUnsavedChanges }: { project_id: string | number, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void }) {
+export function StepFullAFS({
+    project_id, projectConfig, setIsSaving, setHasUnsavedChanges
+}: {
+    project_id: string | number, projectConfig: any, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void
+}) {
     return (
-        <LexicalEditorProvider>
-            <StepFullAFSContent project_id={project_id} setIsSaving={setIsSaving} setHasUnsavedChanges={setHasUnsavedChanges} />
-        </LexicalEditorProvider>
+        <EditorProvider>
+            <StepFullAFSContent project_id={project_id} projectConfig={projectConfig} setIsSaving={setIsSaving} setHasUnsavedChanges={setHasUnsavedChanges} />
+        </EditorProvider>
     )
 }
 function StepFullAFSContent({
     project_id,
+    projectConfig,
     setIsSaving, setHasUnsavedChanges
-}: { project_id: string | number, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void }) {
+}: { project_id: string | number, projectConfig: any, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void }) {
     // const [documentSettings, setDocumentSettings] = useState<DocumentSettings>({
     // 	orientation: "portrait",
     // 	pages: 
     // })
-    const { setActiveEditor, setActivePageIndex } = useLexicalEditorContext();
+    const { setActiveEditor, setActivePageIndex } = useEditorContext();
 
+    // const [automationFlowStatus, setAutomationFlowStatus] = useState<keyof typeof afsFlowStatuses>("start");
     const [currentPage, setCurrentPage] = useState(1)
     const [zoom, setZoom] = useState("100")
-    const [activeTab, setActiveTab] = useState("mdx-editor")
+    const [activeTab, setActiveTab] = useState("preview")
     const [isChatOpen, setIsChatOpen] = useState(false);
     const [pages, setPages] = useState<PageData[]>([])
     const [hasTableOfContents, setHasTableOfContents] = useState(false);
@@ -50,7 +63,12 @@ function StepFullAFSContent({
     // Computed full content for preview/export
     const fullContent = useMemo(() => pages.map((p) => p.content).join("\n\n---\n\n"), [pages]);
 
-    const { data: initialContent, isLoading, isError } = useQuery({
+    const { 
+        data: initialContent, 
+        refetch: refreshFullAFS,
+        isLoading, 
+        isError 
+    } = useQuery({
         queryKey: ["afs-default-content"],
         queryFn: async () => {
             const res = await fetch(`/api/afs?project_id=${project_id}`)
@@ -79,25 +97,6 @@ function StepFullAFSContent({
             setIsSaving(false)
         }
     }, [fullContent, pages]);
-    const handleTemplateSelect = (templateContent: string) => {
-        const initialPages = templateContent.split(/\n---\n/).map((p) => ({
-            id: generateId(),
-            content: p.trim(),
-            settings: { ...defaultPageSettings },
-        }))
-
-        const { pages: processedPages, splitCount } = processPageOverflows(initialPages)
-        setPages(processedPages)
-        setHasUnsavedChanges(true);
-        setHasUnsavedChangesInThisStep(true);
-        setHasTableOfContents(false)
-
-        if (splitCount > 0) {
-            toast.success(`Template loaded and split into ${processedPages.length} pages (${splitCount} splits)`)
-        } else {
-            toast.success("Template loaded successfully")
-        }
-    }
     const updatePageSettings = (index: number, settings: PageSettings) => {
         setPages((prev) => {
             const newPages = [...prev]
@@ -169,22 +168,22 @@ function StepFullAFSContent({
 
     // Handle splitting overflow content to a new page
     const handleSplitOverflow = useCallback((pageIndex: number, currentContent: string, overflowContent: string) => {
-        setPages((prev) => {
-            const newPages = [...prev]
-            // Update current page with trimmed content
-            newPages[pageIndex] = { ...newPages[pageIndex], content: currentContent }
-            // Insert new page with overflow content
-            const newPage: PageData = {
-                id: generateId(),
-                content: overflowContent,
-                settings: { ...newPages[pageIndex].settings },
-            }
-            newPages.splice(pageIndex + 1, 0, newPage)
-            return newPages
-        })
-        setHasUnsavedChanges(true);
-        setHasUnsavedChangesInThisStep(true);
-        toast.success("Content split to new page")
+        // setPages((prev) => {
+        //     const newPages = [...prev]
+        //     // Update current page with trimmed content
+        //     newPages[pageIndex] = { ...newPages[pageIndex], content: currentContent }
+        //     // Insert new page with overflow content
+        //     const newPage: PageData = {
+        //         id: generateId(),
+        //         content: overflowContent,
+        //         settings: { ...newPages[pageIndex].settings },
+        //     }
+        //     newPages.splice(pageIndex + 1, 0, newPage)
+        //     return newPages
+        // })
+        // setHasUnsavedChanges(true);
+        // setHasUnsavedChangesInThisStep(true);
+        // toast.success("Content split to new page")
     }, [])
 
     // Split all overflowing pages
@@ -204,8 +203,8 @@ function StepFullAFSContent({
         setHasUnsavedChangesInThisStep(true);
     }, [])
 
-    // Handle editor focus to update the active editor in context
-    const handleEditorFocus = useCallback((ref: React.RefObject<LexicalEditor | null>, pageIndex: number) => {
+    // // Handle editor focus to update the active editor in context
+    const handleEditorFocus = useCallback((ref: React.RefObject<MDXEditorMethods | null>, pageIndex: number) => {
         setActiveEditor(ref)
         setActivePageIndex(pageIndex)
     }, [setActiveEditor, setActivePageIndex])
@@ -331,7 +330,7 @@ function StepFullAFSContent({
         if (isError) {
             toast.error("Failed to load content")
         }
-    }, [isError])
+    }, [isError]);
 
 
     return (
@@ -343,21 +342,20 @@ function StepFullAFSContent({
                     isChatOpen ? "w-[450px]" : "w-0 border-r-0"
                 )}
             >
-                {isChatOpen && (
-                    <div className="flex-1 flex flex-col p-4 w-[320px]">
+                <Activity mode={isChatOpen ? "visible" : "hidden"}>
+                    <div className="flex-1 flex flex-col p-4">
                         <h3 className="font-semibold text-sm mb-4">AI Assistant</h3>
-                        <div className="flex-1 text-sm text-muted-foreground">
-                            {/* Chat interface here */}
-                            Chat interface coming soon...
-                        </div>
+                        {/* <ChatComponent
+                            type="afs"
+                            project_id={project_id}
+                        /> */}
                     </div>
-                )}
+                </Activity>
             </div>
 
             {/* Editor/Preview Tabs - fills remaining space */}
-            <div className="h-full flex-1 flex flex-col min-w-0 min-h-0">
-                {/* Sticky Toolbar - Outside the transform container */}
-                <div className="flex flex-row justify-between border-b rounded-2xl">
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex-1 flex flex-col min-w-0 min-h-0">
+                <div className="border-b rounded-md flex items-center justify-between shrink-0">
                     <TooltipProvider>
                         <Tooltip>
                             <TooltipTrigger asChild>
@@ -379,85 +377,117 @@ function StepFullAFSContent({
                             </TooltipContent>
                         </Tooltip>
                     </TooltipProvider>
+                    <div className="flex items-center justify-between w-full">
+                        <TabsList className="h-12 bg-transparent p-0 gap-6">
+                            <TabsTrigger
+                                value="edit"
+                                className="cursor-pointer h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2"
+                            >
+                                <Edit className="h-4 w-4 mr-2" />
+                                Editor
+                            </TabsTrigger>
+                            <TabsTrigger
+                                value="preview"
+                                className="cursor-pointer h-full rounded-none border-b-2 border-transparent data-[state=active]:border-primary data-[state=active]:bg-transparent px-2"
+                            >
+                                <Eye className="h-4 w-4 mr-2" />
+                                Preview
+                            </TabsTrigger>
+                        </TabsList>
 
-                    <StickyLexicalEditorToolbar />
+                        <div className="flex items-center gap-4">
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="gap-2 bg-transparent"
+                                            onClick={() => refreshFullAFS()}
+                                        >
+                                            <RefreshCcw className="h-4 w-4" />
+                                            Re-Generate
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        Re-generate the full AFS from the latest data.
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="gap-2 bg-transparent"
+                                            onClick={splitAllOverflows}
+                                        >
+                                            <Scissors className="h-4 w-4" />
+                                            Split Overflows
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        Automatically split all overflowing pages
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
 
-                    <div className=" items-center justify-between shrink-0">
-                        <div className="flex items-center justify-between w-full">
-                            <div className="flex items-center gap-4">
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className="gap-2 bg-transparent"
-                                                onClick={splitAllOverflows}
-                                            >
-                                                <Scissors className="h-4 w-4" />
-                                                Split Overflows
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            Automatically split all overflowing pages
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-
-                                <TooltipProvider>
-                                    <Tooltip>
-                                        <TooltipTrigger asChild>
-                                            <Button
-                                                variant="outline"
-                                                size="sm"
-                                                className={`gap-2 bg-transparent ${hasTableOfContents ? "opacity-50" : ""}`}
-                                                onClick={addTableOfContents}
-                                                disabled={hasTableOfContents}
-                                            >
-                                                <List className="h-4 w-4" />
-                                                Add Contents
-                                            </Button>
-                                        </TooltipTrigger>
-                                        <TooltipContent>
-                                            {hasTableOfContents
-                                                ? "Table of Contents already added"
-                                                : "Add Table of Contents after cover page"}
-                                        </TooltipContent>
-                                    </Tooltip>
-                                </TooltipProvider>
-                                <div className="text-sm text-muted-foreground">
-                                    {pages.length} page{pages.length !== 1 ? "s" : ""}
-                                </div>
-                                <div className="flex items-center gap-1">
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7"
-                                        onClick={() => setZoom(Math.max(50, Number.parseInt(zoom) - 25).toString())}
-                                    >
-                                        <ZoomOut className="h-4 w-4" />
-                                    </Button>
-                                    <Select value={zoom} onValueChange={setZoom}>
-                                        <SelectTrigger className="w-[70px] h-7 text-xs">
-                                            <SelectValue />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="50">50%</SelectItem>
-                                            <SelectItem value="75">75%</SelectItem>
-                                            <SelectItem value="100">100%</SelectItem>
-                                            <SelectItem value="125">125%</SelectItem>
-                                            <SelectItem value="150">150%</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7"
-                                        onClick={() => setZoom(Math.min(200, Number.parseInt(zoom) + 25).toString())}
-                                    >
-                                        <ZoomIn className="h-4 w-4" />
-                                    </Button>
-                                </div>
+                            <TooltipProvider>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className={`gap-2 bg-transparent ${hasTableOfContents ? "opacity-50" : ""}`}
+                                            onClick={addTableOfContents}
+                                            disabled={hasTableOfContents}
+                                        >
+                                            <List className="h-4 w-4" />
+                                            Add Contents
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent>
+                                        {hasTableOfContents
+                                            ? "Table of Contents already added"
+                                            : "Add Table of Contents after cover page"}
+                                    </TooltipContent>
+                                </Tooltip>
+                            </TooltipProvider>
+                            <div className="text-sm text-muted-foreground">
+                                {pages.length} page{pages.length !== 1 ? "s" : ""}
+                            </div>
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => setZoom(Math.max(50, Number.parseInt(zoom) - 25).toString())}
+                                >
+                                    <ZoomOut className="h-4 w-4" />
+                                </Button>
+                                <Select value={zoom} onValueChange={setZoom}>
+                                    <SelectTrigger className="w-[70px] h-7 text-xs">
+                                        <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="50">50%</SelectItem>
+                                        <SelectItem value="75">75%</SelectItem>
+                                        <SelectItem value="100">100%</SelectItem>
+                                        <SelectItem value="125">125%</SelectItem>
+                                        <SelectItem value="150">150%</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => setZoom(Math.min(200, Number.parseInt(zoom) + 25).toString())}
+                                >
+                                    <ZoomIn className="h-4 w-4" />
+                                </Button>
+                                {/* <PDFExport content={fullContent} /> */}
                             </div>
                         </div>
                     </div>
@@ -610,60 +640,94 @@ function StepFullAFSContent({
                             </div>
                         </div>
                     ) : (
-                        <>
-                            {/* Editor interface */}
-                            <div
-                                className={cn(
-                                    "flex-1 bg-muted/10 relative transition-all duration-300 ease-in-out overflow-auto min-h-0"
-                                )}
-                            >
-                                <div
-                                    className="relative flex flex-col items-center py-8"
-                                    style={{
-                                        transform: `scale(${Number.parseInt(zoom) / 100})`,
-                                        transformOrigin: "top center",
-                                    }}
-                                >
-                                    {pages.map((pageData, index) => (
-                                        <LexicalPageEditor
-                                            key={pageData.id}
-                                            pageNumber={index + 1}
-                                            totalPages={pages.length}
-                                            content={pageData.content}
-                                            onChange={(content) => updatePage(index, content)}
-                                            onAddNext={() => addPage(index)}
-                                            onDelete={() => deletePage(index)}
-                                            onMoveUp={() => movePage(index, index - 1)}
-                                            onMoveDown={() => movePage(index, index + 1)}
-                                            settings={pageData.settings}
-                                            onSettingsChange={(settings) => updatePageSettings(index, settings)}
-                                            hideToolbar={true}
-                                            onEditorFocus={handleEditorFocus}
-                                            onSplitOverflow={(currentContent, overflowContent) => handleSplitOverflow(index, currentContent, overflowContent)}
-                                        />
-                                    ))}
 
-                                    <TooltipProvider>
-                                        <Tooltip>
-                                            <TooltipTrigger asChild>
-                                                <Button
-                                                    variant="outline"
-                                                    // size="icon"
-                                                    className=" mb-12 h-12 rounded-full border-dashed bg-transparent"
-                                                    onClick={() => addPage(pages.length - 1)}
-                                                >
-                                                    <Plus className="h-5 w-5" /> Add Page
-                                                </Button>
-                                            </TooltipTrigger>
-                                            <TooltipContent>Add new page at the end</TooltipContent>
-                                        </Tooltip>
-                                    </TooltipProvider>
-                                </div>
-                            </div>
+                        <>
+                            {
+                                activeTab === "edit" ? (
+                                    <TabsContent
+                                        value="edit"
+                                        className="flex-1 flex flex-col mt-0 border-0 p-0 data-[state=inactive]:hidden min-h-0"
+                                    >
+                                        {/* Sticky Toolbar - Outside the transform container */}
+                                        <StickyEditorToolbar />
+
+                                        {/* Editor interface */}
+                                        <div
+                                            className={cn(
+                                                "flex-1 bg-muted/10 relative transition-all duration-300 ease-in-out overflow-auto min-h-0"
+                                            )}
+                                        >
+                                            <div
+                                                className="relative flex flex-col items-center py-8"
+                                                style={{
+                                                    transform: `scale(${Number.parseInt(zoom) / 100})`,
+                                                    transformOrigin: "top center",
+                                                }}
+                                            >
+                                                {pages.map((pageData, index) => (
+                                                    <PageEditor
+                                                        key={pageData.id}
+                                                        pageNumber={index + 1}
+                                                        totalPages={pages.length}
+                                                        content={pageData.content}
+                                                        onChange={(content) => updatePage(index, content)}
+                                                        onAddNext={() => addPage(index)}
+                                                        onDelete={() => deletePage(index)}
+                                                        onMoveUp={() => movePage(index, index - 1)}
+                                                        onMoveDown={() => movePage(index, index + 1)}
+                                                        settings={pageData.settings}
+                                                        onSettingsChange={(settings) => updatePageSettings(index, settings)}
+                                                        hideToolbar={true}
+                                                        onEditorFocus={handleEditorFocus}
+                                                        onSplitOverflow={(currentContent, overflowContent) => handleSplitOverflow(index, currentContent, overflowContent)}
+                                                    />
+                                                ))}
+
+                                                <TooltipProvider>
+                                                    <Tooltip>
+                                                        <TooltipTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                // size="icon"
+                                                                className=" mb-12 h-12 rounded-full border-dashed bg-transparent"
+                                                                onClick={() => addPage(pages.length - 1)}
+                                                            >
+                                                                <Plus className="h-5 w-5" /> Add Page
+                                                            </Button>
+                                                        </TooltipTrigger>
+                                                        <TooltipContent>Add new page at the end</TooltipContent>
+                                                    </Tooltip>
+                                                </TooltipProvider>
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                ) : (
+                                    <TabsContent
+                                        value="preview"
+                                        className="flex-1 mt-0 border-0 p-0 data-[state=inactive]:hidden min-h-0 overflow-auto"
+                                    >
+                                        <div className="flex flex-col bg-muted/20">
+                                            <div
+                                                className="p-6"
+                                                style={{
+                                                    transform: `scale(${Number.parseInt(zoom) / 100})`,
+                                                    transformOrigin: "top center",
+                                                }}
+                                            >
+                                                <A4Preview
+                                                    orientation={defaultPageSettings.orientation}
+                                                    content={fullContent}
+                                                    onPageChange={setCurrentPage}
+                                                />
+                                            </div>
+                                        </div>
+                                    </TabsContent>
+                                )
+                            }
                         </>
                     )
                 }
-            </div>
+            </Tabs>
         </div>
     )
 }
