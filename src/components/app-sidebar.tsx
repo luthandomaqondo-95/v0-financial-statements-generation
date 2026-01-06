@@ -22,17 +22,17 @@ const navigation = {
             url: "/dashboard",
             icon: LayoutDashboard,
         },
-        {
-            title: "Documents",
-            url: "#",
-            icon: FolderOpen,
-            items: [
-                { title: "All Documents", url: "/dashboard/documents" },
-                { title: "Drafts", url: "/dashboard/documents/drafts" },
-                { title: "Under Review", url: "/dashboard/documents/review" },
-                { title: "Finalized", url: "/dashboard/documents/finalized" },
-            ],
-        },
+        // {
+        //     title: "Documents",
+        //     url: "#",
+        //     icon: FolderOpen,
+        //     items: [
+        //         { title: "All Documents", url: "/dashboard/documents" },
+        //         { title: "Drafts", url: "/dashboard/documents/drafts" },
+        //         { title: "Under Review", url: "/dashboard/documents/review" },
+        //         { title: "Finalized", url: "/dashboard/documents/finalized" },
+        //     ],
+        // },
         {
             title: "AI Generation",
             url: "#",
@@ -40,44 +40,44 @@ const navigation = {
             items: [
                 { title: "MDX Editor", url: "/dashboard/editor/mdx" },
                 { title: "Lexical Editor", url: "/dashboard/editor/lexical" },
-                { title: "Generate Statement", url: "/dashboard/editor" },
-                { title: "Templates", url: "/dashboard/templates" },
-                { title: "History", url: "/dashboard/history" },
+                // { title: "Generate Statement", url: "/dashboard/editor" },
+                // { title: "Templates", url: "/dashboard/templates" },
+                // { title: "History", url: "/dashboard/history" },
             ],
         },
-        {
-            title: "Recent",
-            url: "/dashboard/recent",
-            icon: Clock,
-        },
+        // {
+        //     title: "Recent",
+        //     url: "/dashboard/recent",
+        //     icon: Clock,
+        // },
     ],
-    workspace: [
-        {
-            title: "Companies",
-            url: "/dashboard/companies",
-            icon: Building2,
-        },
-        {
-            title: "Team",
-            url: "/dashboard/team",
-            icon: Users,
-        },
-        {
-            title: "Reports",
-            url: "#",
-            icon: FileStack,
-            items: [
-                { title: "Annual Reports", url: "/dashboard/reports/annual" },
-                { title: "Management Accounts", url: "/dashboard/reports/management" },
-                { title: "Tax Computations", url: "/dashboard/reports/tax" },
-            ],
-        },
-        {
-            title: "Calculations",
-            url: "/dashboard/calculations",
-            icon: Calculator,
-        },
-    ],
+    // workspace: [
+    //     {
+    //         title: "Companies",
+    //         url: "/dashboard/companies",
+    //         icon: Building2,
+    //     },
+    //     {
+    //         title: "Team",
+    //         url: "/dashboard/team",
+    //         icon: Users,
+    //     },
+    //     {
+    //         title: "Reports",
+    //         url: "#",
+    //         icon: FileStack,
+    //         items: [
+    //             { title: "Annual Reports", url: "/dashboard/reports/annual" },
+    //             { title: "Management Accounts", url: "/dashboard/reports/management" },
+    //             { title: "Tax Computations", url: "/dashboard/reports/tax" },
+    //         ],
+    //     },
+    //     {
+    //         title: "Calculations",
+    //         url: "/dashboard/calculations",
+    //         icon: Calculator,
+    //     },
+    // ],
     other: [
         {
             title: "Settings",
@@ -158,10 +158,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     </SidebarMenu>
                 </SidebarGroup>
 
-                <SidebarGroup>
+                {/* <SidebarGroup>
                     <SidebarGroupLabel>Workspace</SidebarGroupLabel>
                     <SidebarMenu>
-                        {navigation.workspace.map((item) => (
+                        { navigation.workspace.map((item) => (
                             item.items ? (
                                 <Collapsible key={item.title} asChild defaultOpen={false} className="group/collapsible">
                                     <SidebarMenuItem>
@@ -199,7 +199,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                             )
                         ))}
                     </SidebarMenu>
-                </SidebarGroup>
+                </SidebarGroup> */}
 
                 <SidebarGroup className="mt-auto">
                     <SidebarMenu>
