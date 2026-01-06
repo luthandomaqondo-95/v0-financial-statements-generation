@@ -324,11 +324,15 @@ export default function AFS(props: { params: Params }) {
 						}}
 						className="h-full"
 					>
-						{currentStep === 0 && <Step1Info projectInfoForm={projectInfoForm} setIsSaving={setIsSaving} setHasUnsavedChanges={setHasUnsavedChanges} />}
+						{/* {currentStep === 0 && <Step1Info projectInfoForm={projectInfoForm} setIsSaving={setIsSaving} setHasUnsavedChanges={setHasUnsavedChanges} />}
 						{currentStep === 1 && <Step2Uploads project_id={project_id} handleNextStep={handleNextClick} handlePreviousStep={handlePrevClick} />}
 						{currentStep === 2 && <Step3GLAndTrial />}
 						{currentStep === 3 && <Step4FS />}
-						{currentStep === 4 && <StepFullAFS project_id={project_id} setIsSaving={setIsSaving} setHasUnsavedChanges={setHasUnsavedChanges} />}
+						{
+						currentStep === 4 
+						&&  */}
+						<StepFullAFS project_id={project_id} setIsSaving={setIsSaving} setHasUnsavedChanges={setHasUnsavedChanges} />
+						{/* } */}
 					</motion.div>
 				</AnimatePresence>
 			</div>

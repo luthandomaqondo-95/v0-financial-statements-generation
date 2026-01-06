@@ -120,7 +120,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                     <SidebarMenu>
                         {navigation.main.map((item) => (
                             item.items ? (
-                                <Collapsible key={item.title} asChild defaultOpen={false} className="group/collapsible">
+                                <Collapsible key={item.title} asChild defaultOpen={true} className="group/collapsible">
                                     <SidebarMenuItem>
                                         <CollapsibleTrigger asChild>
                                             <SidebarMenuButton tooltip={item.title}>
