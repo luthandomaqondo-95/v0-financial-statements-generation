@@ -21,7 +21,6 @@ interface Message {
 }
 export function ChatComponent({
     type,
-    project_id,
     llmContext,
     currentPageMarkdown,
     setSelection,
@@ -40,23 +39,22 @@ export function ChatComponent({
     const [chatInput, setChatInput] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);
     const [messages, setMessages] = useState<Message[]>([]);
-    const [input, setInput] = useState("");
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const { activeEditorRef } = useLexicalEditorContext();
     const { aiEditState, executeAIEdit } = useAIEdit();
 
     const handleSendMessage = async () => {
-        if (!input.trim() || aiEditState.isStreaming) return;
+        if (!chatInput.trim() || aiEditState.isStreaming) return;
 
         const userMessage: Message = {
             id: Date.now().toString(),
             role: "user",
-            content: input,
+            content: chatInput,
             timestamp: new Date(),
         };
 
         setMessages(prev => [...prev, userMessage]);
-        setInput("");
+        setChatInput("");
         console.log("🎭 AI Demo Mode: currentPageMarkdown", llmContext);
 
         // Build markdown selection from llmContext if available
@@ -79,7 +77,7 @@ export function ChatComponent({
 
         // Execute AI edit with markdown selection
         const success = await executeAIEdit(
-            input,
+            chatInput,
             activeEditorRef?.current || null,
             currentPageMarkdown,
             markdownSelection
@@ -172,7 +170,7 @@ export function ChatComponent({
                     <InputGroupTextarea
                         placeholder="Ask, Search or Chat..."
                         disabled={aiEditState.isStreaming}
-                        onChange={e => setInput(e.target.value)}
+                        onChange={e => setChatInput(e.target.value)}
                         onKeyPress={handleKeyPress}
                     />
                     <InputGroupAddon align="block-end">
@@ -205,7 +203,7 @@ export function ChatComponent({
                             size="icon-sm"
 
                             onClick={handleSendMessage}
-                            disabled={aiEditState.isStreaming || !input.trim()}
+                            disabled={aiEditState.isStreaming || !chatInput.trim()}
                         >
                             <ArrowUpIcon />
                             <span className="sr-only">Send</span>

@@ -5,6 +5,7 @@
 
 import { useState, useCallback } from "react";
 import { LexicalEditor, RangeSelection } from "lexical";
+import type { MDXEditorMethods } from "@mdxeditor/editor";
 import { generateAIEdits, generateMarkdownAIEdits, sleep } from "@/lib/ai-service";
 import { extractEditorContext, applyNodeEdit, highlightNode, removeHighlight, extractMarkdownEditorContext } from "@/lib/lexical-utils";
 import { convertMarkdownEditToNodeEdits } from "@/lib/markdown-utils";
@@ -153,6 +154,98 @@ export function useAIEdit() {
     }, []);
 
     /**
+     * Execute AI edit for MDX editors (markdown-based)
+     */
+    const executeMarkdownAIEdit = useCallback(async (
+        instruction: string,
+        editor: MDXEditorMethods | null,
+        currentMarkdown: string,
+        markdownSelection?: MarkdownSelection
+    ): Promise<boolean> => {
+        if (!editor) {
+            toast.error("No active editor found");
+            return false;
+        }
+
+        if (!instruction.trim()) {
+            toast.error("Please provide an instruction");
+            return false;
+        }
+
+        setAIEditState(prev => ({ ...prev, isStreaming: true }));
+
+        try {
+            console.log("🎭 AI Markdown Demo Mode: currentMarkdown", currentMarkdown);
+            console.log("🎭 AI Markdown Demo Mode: markdownSelection", markdownSelection);
+
+            // 1. Build markdown-based context directly
+            const context: MarkdownEditorContext = {
+                fullMarkdown: currentMarkdown,
+                selection: markdownSelection,
+            };
+
+            // Call AI service
+            toast.info("AI is analyzing your request...");
+            const response = await generateMarkdownAIEdits(instruction, context);
+            console.log("🎭 AI Markdown Response:", response);
+
+            if (!response.edits || response.edits.length === 0) {
+                toast.info("No changes needed");
+                setAIEditState(prev => ({ ...prev, isStreaming: false }));
+                return false;
+            }
+
+            // 2. Apply edits directly to markdown (MDX editor approach)
+            let updatedMarkdown = currentMarkdown;
+
+            // Sort edits by startOffset in reverse order to avoid offset shifting
+            const sortedEdits = response.edits.sort((a, b) => b.startOffset - a.startOffset);
+
+            for (const edit of sortedEdits) {
+                // Apply each edit to the markdown string
+                updatedMarkdown =
+                    updatedMarkdown.substring(0, edit.startOffset) +
+                    edit.newContent +
+                    updatedMarkdown.substring(edit.endOffset);
+            }
+
+            // 3. Update the editor with the new markdown
+            editor.setMarkdown(updatedMarkdown);
+
+            // Cleanup
+            setAIEditState({
+                isStreaming: false,
+                highlightedNodes: [],
+                currentEditNode: null,
+                streamingText: "",
+            });
+
+            toast.success(response.explanation || "Edits applied successfully");
+            return true;
+
+        } catch (error) {
+            console.error("Markdown AI edit failed:", error);
+
+            let errorMessage = "AI edit failed";
+            if (error instanceof Error) {
+                errorMessage = error.message;
+            }
+
+            toast.error(errorMessage);
+
+            // Cleanup on error
+            setAIEditState({
+                isStreaming: false,
+                highlightedNodes: [],
+                currentEditNode: null,
+                streamingText: "",
+            });
+
+            return false;
+        }
+    }, []);
+
+    /**
      * Cancel ongoing AI edit
      */
     const cancelAIEdit = useCallback(() => {
@@ -167,6 +260,7 @@ export function useAIEdit() {
     return {
         aiEditState,
         executeAIEdit,
+        executeMarkdownAIEdit,
         cancelAIEdit,
     };
 }

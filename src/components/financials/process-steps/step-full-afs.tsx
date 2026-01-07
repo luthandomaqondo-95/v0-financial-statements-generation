@@ -12,8 +12,7 @@ import { generateId, processPageOverflows } from "@/lib/utils/afs-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StickyLexicalEditorToolbar } from "@/components/lexical-editor/sticky-lexical-toolbar";
-import { A4Preview } from "@/components/financials/preview/a4-preview";
-import { ChatComponent } from "@/components/chat-component";
+import { ChatComponent } from "@/components/chat-component/for-lexical";
 import { findTextInMarkdown } from "@/lib/markdown-utils";
 
 
@@ -39,7 +38,11 @@ function StepFullAFSContent({
     // 	orientation: "portrait",
     // 	pages: 
     // })
-    const { activeEditorRef, setActiveEditor, setActivePageIndex, pushHistory, undo, redo, canUndo, canRedo } = useLexicalEditorContext();
+    const context = useLexicalEditorContext();
+    if (!context) {
+        return null;
+    }
+    const { activeEditorRef, setActiveEditor, setActivePageIndex, pushHistory, undo, redo, canUndo, canRedo } = context;
 
     const [currentPage, setCurrentPage] = useState(1)
     const [zoom, setZoom] = useState("100")

@@ -21,6 +21,7 @@ const Editor = dynamic(() => import("@/components/mdx-editor"), {
 
 interface PageEditorProps {
     content: string
+    onTextSelection: (selection: any) => void;
     onChange: (content: string) => void
     pageNumber: number
     totalPages: number
@@ -36,6 +37,7 @@ interface PageEditorProps {
 }
 export function PageEditor({
     content,
+    onTextSelection,
     onChange,
     pageNumber,
     totalPages,
@@ -316,6 +318,7 @@ export function PageEditor({
                         ref={editorRef}
                         markdown={content}
                         onChange={onChange}
+                        onTextSelection={onTextSelection}
                         hideToolbar={hideToolbar}
                         containerClassName={cn(
                             "border-none h-full bg-transparent",

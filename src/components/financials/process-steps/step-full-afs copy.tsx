@@ -5,18 +5,16 @@ import { ChevronsLeft, ChevronsRight, Edit, Eye, List, Plus, RefreshCcw, Scissor
 import { PageData, PageSettings } from "@/types/afs-types";
 import { cn } from "@/lib/utils";
 import { generateId, processPageOverflows } from "@/lib/utils/afs-utils";
-import type { LexicalEditor } from "lexical";
-// import { PDFExport } from "@/components/financials/pdf-export";
 import { EditorProvider, useEditorContext } from "@/components/mdx-editor/editor-context";
 import { StickyEditorToolbar } from "@/components/mdx-editor/sticky-editor-toolbar";
-import { PageEditor } from "@/components/financials/editor/page-editor";
+import { PageEditor } from "@/components/mdx-editor/page-editor";
 import { A4Preview } from "@/components/financials/preview/a4-preview";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ChatComponent } from "@/components/chat-component";
+import { ChatComponent } from "@/components/chat-component/for-mdx";
 import { MDXEditorMethods } from "@mdxeditor/editor";
 // import { afsFlowStatuses } from "@/lib/definitions/afs";
 // import { APIResponse } from "@/lib/definitions";
@@ -32,7 +30,7 @@ const defaultPageSettings: PageSettings = {
 export function StepFullAFS({
     project_id, projectConfig, setIsSaving, setHasUnsavedChanges
 }: {
-    project_id: string | number, projectConfig: any, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void
+    project_id: string | number, projectConfig?: any, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void
 }) {
     return (
         <EditorProvider>
@@ -44,7 +42,7 @@ function StepFullAFSContent({
     project_id,
     projectConfig,
     setIsSaving, setHasUnsavedChanges
-}: { project_id: string | number, projectConfig: any, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void }) {
+}: { project_id: string | number, projectConfig?: any, setIsSaving: (isSaving: boolean) => void, setHasUnsavedChanges: (hasUnsavedChanges: boolean) => void }) {
     // const [documentSettings, setDocumentSettings] = useState<DocumentSettings>({
     // 	orientation: "portrait",
     // 	pages: 
@@ -59,15 +57,17 @@ function StepFullAFSContent({
     const [pages, setPages] = useState<PageData[]>([])
     const [hasTableOfContents, setHasTableOfContents] = useState(false);
     const [hasUnsavedChangesInThisStep, setHasUnsavedChangesInThisStep] = useState(false);
+    const [selection, setSelection] = useState<{ text: string, start: number, end: number } | null>(null);
+    const [editingRange, setEditingRange] = useState<{ start: number, end: number } | null>(null);
 
     // Computed full content for preview/export
     const fullContent = useMemo(() => pages.map((p) => p.content).join("\n\n---\n\n"), [pages]);
 
-    const { 
-        data: initialContent, 
+    const {
+        data: initialContent,
         refetch: refreshFullAFS,
-        isLoading, 
-        isError 
+        isLoading,
+        isError
     } = useQuery({
         queryKey: ["afs-default-content"],
         queryFn: async () => {
@@ -78,6 +78,40 @@ function StepFullAFSContent({
         },
         staleTime: Number.POSITIVE_INFINITY,
     })
+
+    // Handle text selection (markdown-based positions)
+    const handleMouseUp = (selection: any) => {
+        // Extract actual text content from selection
+        const selectedText = selection.getTextContent();
+        const currentPageMarkdown = pages[currentPage - 1]?.content || "";
+
+        // For MDX editor, we can work directly with character positions
+        // since the editor content is already markdown
+        if (selectedText && selectedText.trim()) {
+            // Find the position of selected text in the current page markdown
+            const trimmedText = selectedText.trim();
+            const startIndex = currentPageMarkdown.indexOf(trimmedText);
+
+            if (startIndex !== -1) {
+                setSelection({
+                    text: trimmedText,
+                    start: startIndex,
+                    end: startIndex + trimmedText.length,
+                });
+            } else {
+                // Fallback to simple position mapping
+                setSelection({
+                    text: trimmedText,
+                    start: selection.anchor?.offset || 0,
+                    end: selection.focus?.offset || trimmedText.length,
+                });
+            }
+        }
+    };
+    const clearSelection = () => {
+        setSelection(null);
+        window.getSelection()?.removeAllRanges();
+    };
 
     const performAutoSave = useCallback(async () => {
         setIsSaving(true)
@@ -345,10 +379,15 @@ function StepFullAFSContent({
                 <Activity mode={isChatOpen ? "visible" : "hidden"}>
                     <div className="flex-1 flex flex-col p-4">
                         <h3 className="font-semibold text-sm mb-4">AI Assistant</h3>
-                        {/* <ChatComponent
+                        <ChatComponent
                             type="afs"
                             project_id={project_id}
-                        /> */}
+                            llmContext={selection}
+                            currentPageMarkdown={pages[currentPage - 1]?.content || ""}
+                            setSelection={setSelection}
+                            setEditingRange={setEditingRange}
+                            clearSelection={clearSelection}
+                        />
                     </div>
                 </Activity>
             </div>
@@ -414,7 +453,7 @@ function StepFullAFSContent({
                                     </TooltipContent>
                                 </Tooltip>
                             </TooltipProvider>
-                            
+
                             <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
@@ -670,6 +709,7 @@ function StepFullAFSContent({
                                                         pageNumber={index + 1}
                                                         totalPages={pages.length}
                                                         content={pageData.content}
+                                                        onTextSelection={handleMouseUp}
                                                         onChange={(content) => updatePage(index, content)}
                                                         onAddNext={() => addPage(index)}
                                                         onDelete={() => deletePage(index)}

@@ -1,7 +1,7 @@
 "use client"
 
+import { useMemo, useEffect } from "react"
 import type { ForwardedRef, CSSProperties } from "react"
-import { useMemo } from "react"
 import { MDXEditor, type MDXEditorMethods, type MDXEditorProps, headingsPlugin, listsPlugin, quotePlugin, thematicBreakPlugin, markdownShortcutPlugin, tablePlugin, toolbarPlugin, UndoRedo, BoldItalicUnderlineToggles, BlockTypeSelect, ListsToggle, CreateLink, InsertTable, InsertThematicBreak, Separator, InsertImage, InsertCodeBlock, DiffSourceToggleWrapper, diffSourcePlugin } from "@mdxeditor/editor"
 import { cn } from "@/lib/utils"
 
@@ -12,6 +12,7 @@ export default function InitializedMDXEditor({
     contentEditableClassName,
     style,
     hideToolbar = false,
+    onTextSelection,
     ...props
 }: {
     editorRef: ForwardedRef<MDXEditorMethods> | null
@@ -19,6 +20,7 @@ export default function InitializedMDXEditor({
     contentEditableClassName?: string
     style?: CSSProperties
     hideToolbar?: boolean
+    onTextSelection?: (selection: any) => void
 } & MDXEditorProps) {
     const plugins = useMemo(() => {
         const basePlugins = [
@@ -29,6 +31,7 @@ export default function InitializedMDXEditor({
             markdownShortcutPlugin(),
             tablePlugin(),
         ]
+
 
         // Only add toolbar plugin if not hidden
         if (!hideToolbar) {
@@ -61,6 +64,46 @@ export default function InitializedMDXEditor({
 
         return basePlugins
     }, [hideToolbar])
+
+    // Handle text selection
+    useEffect(() => {
+        if (!onTextSelection) return
+
+        const handleSelection = () => {
+            const selection = window.getSelection()
+            if (selection && selection.toString().trim()) {
+                // Check if the selection is within our editor
+                const editorElement = document.querySelector('[contenteditable="true"]')
+                if (editorElement && editorElement.contains(selection.anchorNode)) {
+                    // Create a simple selection object that matches the expected interface
+                    const mockSelection = {
+                        getTextContent: () => selection.toString(),
+                        anchor: { offset: selection.anchorOffset },
+                        focus: { offset: selection.focusOffset },
+                    }
+
+                    onTextSelection(mockSelection)
+                }
+            }
+        }
+
+        const handleMouseUp = () => {
+            // Small delay to ensure selection is updated
+            setTimeout(handleSelection, 10)
+        }
+
+        const editorElement = document.querySelector('[contenteditable="true"]')
+        if (editorElement) {
+            editorElement.addEventListener('mouseup', handleMouseUp)
+            // Also listen for selection changes
+            document.addEventListener('selectionchange', handleSelection)
+
+            return () => {
+                editorElement.removeEventListener('mouseup', handleMouseUp)
+                document.removeEventListener('selectionchange', handleSelection)
+            }
+        }
+    }, [onTextSelection])
 
     return (
         <div
