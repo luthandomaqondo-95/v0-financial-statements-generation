@@ -40,6 +40,7 @@ const navigation = {
             items: [
                 { title: "MDX Editor", url: "/dashboard/editor/mdx" },
                 { title: "Lexical Editor", url: "/dashboard/editor/lexical" },
+                { title: "Tiptap Editor", url: "/dashboard/editor/tiptap" },
                 // { title: "Generate Statement", url: "/dashboard/editor" },
                 // { title: "Templates", url: "/dashboard/templates" },
                 // { title: "History", url: "/dashboard/history" },

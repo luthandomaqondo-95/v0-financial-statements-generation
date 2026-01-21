@@ -12,7 +12,7 @@ import { CHAR_PER_LINE_LANDSCAPE, CHAR_PER_LINE_PORTRAIT, DEFAULT_MARGIN, findBr
 import { PageSettings } from "@/types/afs-types"
 
 // Dynamically import the editor to avoid SSR issues
-const Editor = dynamic(() => import("@/components/mdx-editor"), {
+const Editor = dynamic(() => import("@/components/editor-mdx"), {
     ssr: false,
     loading: () => (
         <div className="h-full w-full flex items-center justify-center text-muted-foreground">Loading editor...</div>

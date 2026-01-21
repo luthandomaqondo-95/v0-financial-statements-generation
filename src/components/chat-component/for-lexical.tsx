@@ -8,7 +8,7 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupText, InputGro
 import { Separator } from "@/components/ui/separator"
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { useLexicalEditorContext } from "../lexical-editor";
+import { useLexicalEditorContext } from "../editor-lexical";
 import { useAIEdit } from "@/hooks/useAIEdit";
 import { MarkdownSelection } from "@/types/ai-types";
 

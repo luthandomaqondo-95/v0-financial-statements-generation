@@ -7,11 +7,11 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PageData, PageSettings } from "@/types/afs-types";
-import { LexicalEditorProvider, useLexicalEditorContext, LexicalPageEditor } from "@/components/lexical-editor";
+import { LexicalEditorProvider, useLexicalEditorContext, LexicalPageEditor } from "@/components/editor-lexical";
 import { generateId, processPageOverflows } from "@/lib/utils/afs-utils";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
-import { StickyLexicalEditorToolbar } from "@/components/lexical-editor/sticky-lexical-toolbar";
+import { StickyLexicalEditorToolbar } from "@/components/editor-lexical/sticky-lexical-toolbar";
 import { ChatComponent } from "@/components/chat-component/for-lexical";
 import { findTextInMarkdown } from "@/lib/markdown-utils";
 

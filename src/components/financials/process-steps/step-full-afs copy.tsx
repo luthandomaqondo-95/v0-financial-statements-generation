@@ -5,9 +5,9 @@ import { ChevronsLeft, ChevronsRight, Edit, Eye, List, Plus, RefreshCcw, Scissor
 import { PageData, PageSettings } from "@/types/afs-types";
 import { cn } from "@/lib/utils";
 import { generateId, processPageOverflows } from "@/lib/utils/afs-utils";
-import { EditorProvider, useEditorContext } from "@/components/mdx-editor/editor-context";
-import { StickyEditorToolbar } from "@/components/mdx-editor/sticky-editor-toolbar";
-import { PageEditor } from "@/components/mdx-editor/page-editor";
+import { EditorProvider, useEditorContext } from "@/components/editor-mdx/editor-context";
+import { StickyEditorToolbar } from "@/components/editor-mdx/sticky-editor-toolbar";
+import { PageEditor } from "@/components/editor-mdx/page-editor";
 import { A4Preview } from "@/components/financials/preview/a4-preview";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
