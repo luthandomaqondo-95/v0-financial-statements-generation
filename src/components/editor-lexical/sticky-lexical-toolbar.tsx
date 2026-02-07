@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { $createTableOfContentsNode } from "@/components/lexical-editor/nodes/TableOfContentsNode";
+import { $createTableOfContentsNode } from "@/components/editor-lexical/nodes/TableOfContentsNode";
 import { toast } from "sonner";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 

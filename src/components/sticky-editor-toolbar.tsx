@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { useEditorContext } from "@/components/mdx-editor/editor-context"
+import { useEditorContext } from "@/components/editor-mdx/editor-context"
 import { Bold, Italic, Underline, Undo2, Redo2, List, ListOrdered, Link, Table, Minus, Type, Heading1, Heading2, Heading3, Heading4, Pilcrow, Quote } from "lucide-react"
 import { cn } from "@/lib/utils"
 
