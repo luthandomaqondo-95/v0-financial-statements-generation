@@ -25,6 +25,9 @@ interface EditorContextType {
     // AI editing state
     aiEditState: AIEditState | null;
     setAIEditState: (state: AIEditState | null) => void;
+    // Current block type tracking
+    currentBlockType: string;
+    setCurrentBlockType: (blockType: string) => void;
 }
 
 const EditorContext = createContext<EditorContextType | null>(null)
@@ -40,6 +43,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     const [historyIndex, setHistoryIndex] = useState(-1);
     // AI editing state
     const [aiEditState, setAIEditState] = useState<AIEditState | null>(null);
+    // Current block type tracking
+    const [currentBlockType, setCurrentBlockType] = useState<string>("paragraph");
 
     const setActiveEditor = useCallback((ref: RefObject<MDXEditorMethods | null> | null) => {
         setActiveEditorRef(ref)
@@ -99,6 +104,8 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 clearHistory,
                 aiEditState,
                 setAIEditState,
+                currentBlockType,
+                setCurrentBlockType,
             }}
         >
             {children}

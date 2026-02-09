@@ -10,6 +10,7 @@ export interface EditorProps extends MDXEditorProps {
     style?: CSSProperties
     hideToolbar?: boolean
     onTextSelection?: (selection: any) => void
+    onBlockTypeChange?: (blockType: string) => void
 }
 
 // This is the only place InitializedMDXEditor is imported directly.

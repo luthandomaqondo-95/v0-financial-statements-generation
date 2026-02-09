@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { Calculator, Search, Filter, ChevronDown, ChevronRight, CheckCircle2, AlertTriangle, RefreshCw, ArrowUpDown, Layers, Upload, Download, FileText } from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"

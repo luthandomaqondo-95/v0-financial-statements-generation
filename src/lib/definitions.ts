@@ -3,6 +3,7 @@ import { z } from "zod";
 
 // Form schema for project info
 export const projectInfoSchema = z.object({
+    projectName: z.string().min(1, { message: "Project name is required" }),
     reportingFramework: z.enum(["ifrs-small", "ifrs", "sa-gaap", "micro"], { required_error: "Please select a reporting framework" }),
     category: z.enum(["product", "service", "all"], { required_error: "Please select a category" }),
     natureOfBusiness: z.string().min(3, { message: "Nature of business must be at least 3 characters" }),

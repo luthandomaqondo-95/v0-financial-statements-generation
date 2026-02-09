@@ -5,18 +5,14 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { motion, AnimatePresence } from "framer-motion"
+import { motion, AnimatePresence } from "motion/react"
 import { Button } from "@/components/ui/button"
 import { Save, FileText, ChevronLeft, Check, Loader } from "lucide-react"
-import StepIndicator from "@/components/financials/StepIndicator"
-import { Step1Info } from "@/components/financials/process-steps/step-1-info";
-import { Step2Uploads } from "@/components/financials/process-steps/step-2-uploads";
-import { Step3GLAndTrial } from "@/components/financials/process-steps/step-3-gl-and-trial";
-import { Step4FS } from "@/components/financials/process-steps/step-4-fs";
-import { StepFullAFS } from "@/components/financials/process-steps/step-full-afs copy";
-import { projectInfoSchema } from "@/lib/definitions";
+import { StepFullAFS } from "@/components/financials/process-steps/step-full-afs-mdx";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/useDebouce";
+import { projectInfoSchema } from "@/lib/definitions";
+import StepIndicator from "@/components/financials/StepIndicator";
 
 const slideVariants = {
 	enter: (direction: number) => ({
@@ -44,10 +40,10 @@ const totalSteps = steps.length;
 
 type Params = Promise<{ id: string }>
 export default function AFS(props: { params: Params }) {
-	const myParams = use(props.params);
-	const project_id = myParams?.id;
+    const myParams = use(props.params);
+    const project_id = myParams?.id;
 
-	const router = useRouter()
+    const router = useRouter()
 
 
 	const [isSaving, setIsSaving] = useState(false)
@@ -75,6 +71,7 @@ export default function AFS(props: { params: Params }) {
 	const projectInfoForm = useForm<z.infer<typeof projectInfoSchema>>({
 		resolver: zodResolver(projectInfoSchema),
 		defaultValues: {
+			projectName: "Untitled Project",
 			reportingFramework: "ifrs",
 			category: undefined,
 			natureOfBusiness: "",
@@ -239,17 +236,23 @@ export default function AFS(props: { params: Params }) {
 	}, [project_id])
 
 
-	return (
-		<div className="h-screen flex flex-col bg-background">
-			{/* Header */}
-			<header className="flex h-14 items-center gap-4 border-b bg-background px-4 shrink-0">
-				<Button variant="ghost" size="sm" className="gap-2" onClick={() => router.back()}>
-					<ChevronLeft className="h-4 w-4" />
-					Back
-				</Button>
-				<div className="flex items-center gap-2">
+    return (
+        <div className="h-screen flex flex-col bg-background">
+            {/* Header */}
+            <header className="flex h-14 items-center gap-4 border-b bg-background px-4 shrink-0">
+                <Button variant="ghost" size="sm" className="gap-2" onClick={() => router.back()}>
+                    <ChevronLeft className="h-4 w-4" />
+                    Back
+                </Button>
+                <div className="flex items-center gap-2">
 					<FileText className="h-5 w-5 text-muted-foreground" />
-					<span className="font-medium">Annual Financial Statement 2024</span>
+					<input
+						type="text"
+						value={projectInfoForm.watch("projectName")}
+						onChange={(e) => projectInfoForm.setValue("projectName", e.target.value)}
+						className="text-lg font-medium bg-transparent border-none outline-none focus:outline-none px-2 py-1 rounded hover:bg-muted/50 focus:bg-muted/50"
+						placeholder="Untitled Project"
+					/>
 				</div>
 
 				{/* Auto-save indicator */}

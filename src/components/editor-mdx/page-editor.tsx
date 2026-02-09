@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, useEffect, useState, useCallback } from "react"
+import React, { useRef, useEffect, useState, useCallback } from "react"
 import dynamic from "next/dynamic"
 import type { MDXEditorMethods } from "@mdxeditor/editor"
 import { Button } from "@/components/ui/button"
@@ -22,6 +22,7 @@ const Editor = dynamic(() => import("@/components/editor-mdx"), {
 interface PageEditorProps {
     content: string
     onTextSelection: (selection: any) => void;
+    onBlockTypeChange?: (blockType: string) => void;
     onChange: (content: string) => void
     pageNumber: number
     totalPages: number
@@ -35,9 +36,11 @@ interface PageEditorProps {
     onEditorFocus?: (ref: React.RefObject<MDXEditorMethods | null>, pageIndex: number) => void
     onSplitOverflow?: (currentContent: string, overflowContent: string) => void
 }
-export function PageEditor({
+
+function PageEditorInner({
     content,
     onTextSelection,
+    onBlockTypeChange,
     onChange,
     pageNumber,
     totalPages,
@@ -59,6 +62,10 @@ export function PageEditor({
     const [effectiveLimit, setEffectiveLimit] = useState(0)
     const [canSplit, setCanSplit] = useState(false)
 
+    // Refs for debounced overflow checking
+    const overflowTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+    const resizeThrottleRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
     const handleFocus = useCallback(() => {
         if (onEditorFocus) {
             onEditorFocus(editorRef, pageNumber - 1)
@@ -74,11 +81,9 @@ export function PageEditor({
         if (!onSplitOverflow || !isOverflowing) return
 
         const charPerLine = settings.orientation === "portrait" ? CHAR_PER_LINE_PORTRAIT : CHAR_PER_LINE_LANDSCAPE
-        // Use effectiveLimit if available, otherwise use maxLines
-        // Use a higher threshold (0.95) when using effectiveLimit since it's based on actual content
         const limit = effectiveLimit > 0 ? effectiveLimit : maxLines
         const ratio = effectiveLimit > 0 ? 0.95 : 0.75
-        
+
         const breakResult = findBreakPoint(content, limit, charPerLine, ratio)
 
         if (breakResult) {
@@ -86,97 +91,114 @@ export function PageEditor({
         }
     }, [content, isOverflowing, maxLines, effectiveLimit, onSplitOverflow, settings.orientation]);
 
-    const handleOrientationChange = (value: string) => {
+    const handleOrientationChange = useCallback((value: string) => {
         onSettingsChange({
             ...settings,
             orientation: value as "portrait" | "landscape",
         })
-    }
+    }, [settings, onSettingsChange]);
 
-    // Auto-split overflow content
-    useEffect(() => {
-        if (isOverflowing && canSplit && onSplitOverflow) {
-            const timer = setTimeout(() => {
-                handleSplitOverflow()
-            }, 1000)
-            return () => clearTimeout(timer)
-        }
-    }, [isOverflowing, canSplit, handleSplitOverflow, onSplitOverflow])
+    /**
+     * Core overflow check logic -- measures DOM and estimates line usage.
+     * Called via debounce/idle scheduling, never synchronously on keystroke.
+     */
+    const checkOverflow = useCallback(() => {
+        if (!containerRef.current) return
 
-    useEffect(() => {
-        const checkOverflow = () => {
-            if (containerRef.current) {
-                // Calculate page dimensions
-                const pageHeightPx = (PAGE_HEIGHT_MM * 96) / 25.4
-                const marginTopPx = (DEFAULT_MARGIN * 96) / 25.4
-                const marginBottomPx = (DEFAULT_MARGIN * 96) / 25.4
-                const availableHeightPx = pageHeightPx - marginTopPx - marginBottomPx - 40 // 40px for footer
+        const pageHeightPx = (PAGE_HEIGHT_MM * 96) / 25.4
+        const marginTopPx = (DEFAULT_MARGIN * 96) / 25.4
+        const marginBottomPx = (DEFAULT_MARGIN * 96) / 25.4
+        const availableHeightPx = pageHeightPx - marginTopPx - marginBottomPx - 40
 
-                // Estimate lines based on content
-                const charPerLine = settings.orientation === "portrait" ? CHAR_PER_LINE_PORTRAIT : CHAR_PER_LINE_LANDSCAPE
-                
-                // Account for wrapped lines
-                let totalEstimatedLines = 0
-                content.split('\n').forEach(line => {
-                    if (line.trim() === '') {
-                        totalEstimatedLines += 0.5 // Empty lines take less space
-                    } else if (line.startsWith('#')) {
-                        totalEstimatedLines += 2 // Headers take more space
-                    } else if (line.startsWith('|')) {
-                        totalEstimatedLines += 1.2 // Table rows
-                    } else if (line.startsWith('```')) {
-                        totalEstimatedLines += 1 // Code block markers
-                    } else {
-                        // Regular text - estimate wrapping
-                        const wrappedLines = Math.ceil(line.length / charPerLine)
-                        totalEstimatedLines += Math.max(1, wrappedLines)
-                    }
-                })
+        const charPerLine = settings.orientation === "portrait" ? CHAR_PER_LINE_PORTRAIT : CHAR_PER_LINE_LANDSCAPE
 
-                const calculatedMaxLines = Math.floor(availableHeightPx / LINE_HEIGHT_PX)
-                setMaxLines(calculatedMaxLines)
-                setEstimatedLines(Math.round(totalEstimatedLines))
-                
-                // Check actual overflow using DOM
-                const contentHeight = containerRef.current.scrollHeight
-                const hasOverflow = contentHeight > pageHeightPx + 5 // 5px tolerance
-                setIsOverflowing(hasOverflow)
-
-                // Calculate effective limit based on actual content height if overflowing
-                let currentEffectiveLimit = 0
-                if (hasOverflow && totalEstimatedLines > 0) {
-                    // Calculate ratio of available space to content height
-                    const ratio = pageHeightPx / contentHeight
-                    // The effective capacity in "estimated lines" is the total lines * ratio
-                    currentEffectiveLimit = totalEstimatedLines * ratio
-                }
-                setEffectiveLimit(currentEffectiveLimit)
-
-                // Check if we can split the content
-                if (hasOverflow) {
-                    const limit = currentEffectiveLimit > 0 ? currentEffectiveLimit : calculatedMaxLines
-                    const ratio = currentEffectiveLimit > 0 ? 0.95 : 0.75
-                    const breakResult = findBreakPoint(content, limit, charPerLine, ratio)
-                    setCanSplit(breakResult !== null)
-                } else {
-                    setCanSplit(false)
-                }
+        let totalEstimatedLines = 0
+        content.split('\n').forEach(line => {
+            if (line.trim() === '') {
+                totalEstimatedLines += 0.5
+            } else if (line.startsWith('#')) {
+                totalEstimatedLines += 2
+            } else if (line.startsWith('|')) {
+                totalEstimatedLines += 1.2
+            } else if (line.startsWith('```')) {
+                totalEstimatedLines += 1
+            } else {
+                const wrappedLines = Math.ceil(line.length / charPerLine)
+                totalEstimatedLines += Math.max(1, wrappedLines)
             }
+        })
+
+        const calculatedMaxLines = Math.floor(availableHeightPx / LINE_HEIGHT_PX)
+        setMaxLines(calculatedMaxLines)
+        setEstimatedLines(Math.round(totalEstimatedLines))
+
+        const contentHeight = containerRef.current.scrollHeight
+        const hasOverflow = contentHeight > pageHeightPx + 5
+        setIsOverflowing(hasOverflow)
+
+        let currentEffectiveLimit = 0
+        if (hasOverflow && totalEstimatedLines > 0) {
+            const ratio = pageHeightPx / contentHeight
+            currentEffectiveLimit = totalEstimatedLines * ratio
         }
+        setEffectiveLimit(currentEffectiveLimit)
 
-        checkOverflow()
-
-        const resizeObserver = new ResizeObserver(checkOverflow)
-        if (containerRef.current) {
-            resizeObserver.observe(containerRef.current)
+        if (hasOverflow) {
+            const limit = currentEffectiveLimit > 0 ? currentEffectiveLimit : calculatedMaxLines
+            const ratio = currentEffectiveLimit > 0 ? 0.95 : 0.75
+            const breakResult = findBreakPoint(content, limit, charPerLine, ratio)
+            setCanSplit(breakResult !== null)
+        } else {
+            setCanSplit(false)
         }
+    }, [content, settings.orientation, PAGE_HEIGHT_MM]);
 
+    /**
+     * Schedule an overflow check using requestIdleCallback (with setTimeout fallback).
+     * Debounced at 500ms so it never interrupts typing.
+     */
+    const scheduleOverflowCheck = useCallback(() => {
+        if (overflowTimerRef.current) clearTimeout(overflowTimerRef.current)
+        overflowTimerRef.current = setTimeout(() => {
+            const idle = typeof window !== "undefined" && window.requestIdleCallback
+                ? window.requestIdleCallback
+                : (cb: () => void) => setTimeout(cb, 50)
+            idle(() => checkOverflow())
+        }, 500)
+    }, [checkOverflow])
+
+    // Cleanup timers on unmount
+    useEffect(() => {
+        return () => {
+            if (overflowTimerRef.current) clearTimeout(overflowTimerRef.current)
+            if (resizeThrottleRef.current) clearTimeout(resizeThrottleRef.current)
+        }
+    }, [])
+
+    // Schedule overflow check when content or settings change
+    useEffect(() => {
+        scheduleOverflowCheck()
+    }, [scheduleOverflowCheck])
+
+    // Throttled ResizeObserver -- fires at most once per 500ms
+    useEffect(() => {
+        if (!containerRef.current) return
+
+        const resizeObserver = new ResizeObserver(() => {
+            if (resizeThrottleRef.current) return // Already scheduled
+            resizeThrottleRef.current = setTimeout(() => {
+                resizeThrottleRef.current = null
+                checkOverflow()
+            }, 500)
+        })
+
+        resizeObserver.observe(containerRef.current)
         return () => resizeObserver.disconnect()
-    }, [content, settings, PAGE_HEIGHT_MM]);
+    }, [checkOverflow]);
 
     return (
         <div className="relative group mb-12 last:mb-0 flex flex-col items-center">
-            {/* Page Header / Controls */}
+            {/* Page Header / Controls -- single TooltipProvider for all buttons */}
             <div
                 className="w-full flex items-center justify-between mb-2 px-2"
                 style={{ maxWidth: `${PAGE_WIDTH_MM}mm` }}
@@ -191,10 +213,10 @@ export function PageEditor({
                         </span>
                     )}
                 </div>
-                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {/* Move Up/Down Buttons */}
-                    {onMoveUp && pageNumber > 1 && (
-                        <TooltipProvider>
+                <TooltipProvider>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Move Up/Down Buttons */}
+                        {onMoveUp && pageNumber > 1 && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -208,10 +230,8 @@ export function PageEditor({
                                 </TooltipTrigger>
                                 <TooltipContent>Move page up</TooltipContent>
                             </Tooltip>
-                        </TooltipProvider>
-                    )}
-                    {onMoveDown && pageNumber < totalPages && (
-                        <TooltipProvider>
+                        )}
+                        {onMoveDown && pageNumber < totalPages && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -225,15 +245,13 @@ export function PageEditor({
                                 </TooltipTrigger>
                                 <TooltipContent>Move page down</TooltipContent>
                             </Tooltip>
-                        </TooltipProvider>
-                    )}
+                        )}
 
-                    <div className="w-px h-6 bg-border mx-1" />
+                        <div className="w-px h-6 bg-border mx-1" />
 
-                    {/* Orientation Toggle */}
-                    <Tabs value={settings.orientation} onValueChange={handleOrientationChange}>
-                        <TabsList className="h-8 p-1">
-                            <TooltipProvider>
+                        {/* Orientation Toggle */}
+                        <Tabs value={settings.orientation} onValueChange={handleOrientationChange}>
+                            <TabsList className="h-8 p-1">
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <TabsTrigger value="portrait" className="h-6 px-2">
@@ -242,8 +260,6 @@ export function PageEditor({
                                     </TooltipTrigger>
                                     <TooltipContent>Portrait</TooltipContent>
                                 </Tooltip>
-                            </TooltipProvider>
-                            <TooltipProvider>
                                 <Tooltip>
                                     <TooltipTrigger asChild>
                                         <TabsTrigger value="landscape" className="h-6 px-2">
@@ -252,14 +268,12 @@ export function PageEditor({
                                     </TooltipTrigger>
                                     <TooltipContent>Landscape</TooltipContent>
                                 </Tooltip>
-                            </TooltipProvider>
-                        </TabsList>
-                    </Tabs>
+                            </TabsList>
+                        </Tabs>
 
-                    <div className="w-px h-6 bg-border mx-1" />
+                        <div className="w-px h-6 bg-border mx-1" />
 
-                    {/* Add Page Button */}
-                    <TooltipProvider>
+                        {/* Add Page Button */}
                         <Tooltip>
                             <TooltipTrigger asChild>
                                 <Button
@@ -273,11 +287,9 @@ export function PageEditor({
                             </TooltipTrigger>
                             <TooltipContent>Add page after</TooltipContent>
                         </Tooltip>
-                    </TooltipProvider>
 
-                    {/* Delete Page Button */}
-                    {totalPages > 1 && (
-                        <TooltipProvider>
+                        {/* Delete Page Button */}
+                        {totalPages > 1 && (
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -291,15 +303,15 @@ export function PageEditor({
                                 </TooltipTrigger>
                                 <TooltipContent>Delete page</TooltipContent>
                             </Tooltip>
-                        </TooltipProvider>
-                    )}
-                </div>
+                        )}
+                    </div>
+                </TooltipProvider>
             </div>
 
             {/* Page Container - Always Light Mode */}
             <div
                 className={cn(
-                    "bg-white text-gray-900 shadow-lg transition-all duration-300 relative",
+                    "bg-white shadow-lg transition-all duration-300 relative",
                     isOverflowing && "ring-2 ring-destructive ring-offset-2",
                 )}
                 style={{
@@ -307,7 +319,7 @@ export function PageEditor({
                     height: `${PAGE_HEIGHT_MM}mm`,
                 }}
             >
-                {/* Editor Wrapper with sticky toolbar support */}
+                {/* Editor Wrapper */}
                 <div
                     ref={containerRef}
                     className="h-full w-full page-editor-container"
@@ -319,6 +331,7 @@ export function PageEditor({
                         markdown={content}
                         onChange={onChange}
                         onTextSelection={onTextSelection}
+                        onBlockTypeChange={onBlockTypeChange}
                         hideToolbar={hideToolbar}
                         containerClassName={cn(
                             "border-none h-full bg-transparent",
@@ -345,10 +358,10 @@ export function PageEditor({
                     <span className="text-[10px] text-gray-400">Page {pageNumber} of {totalPages}</span>
                 </div>
 
-                {/* Overflow Indicator */}
+                {/* Overflow Indicator -- single TooltipProvider */}
                 {isOverflowing && (
-                    <div className="absolute -right-14 top-10 flex flex-col gap-2">
-                        <TooltipProvider>
+                    <TooltipProvider>
+                        <div className="absolute -right-14 top-10 flex flex-col gap-2">
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button variant="destructive" size="icon" className="h-8 w-8 rounded-full animate-pulse">
@@ -362,14 +375,12 @@ export function PageEditor({
                                     </p>
                                 </TooltipContent>
                             </Tooltip>
-                        </TooltipProvider>
-                        {canSplit && onSplitOverflow && (
-                            <TooltipProvider>
+                            {canSplit && onSplitOverflow && (
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <Button 
-                                            variant="secondary" 
-                                            size="icon" 
+                                        <Button
+                                            variant="secondary"
+                                            size="icon"
                                             className="h-8 w-8 rounded-full bg-blue-500 hover:bg-blue-600 text-white"
                                             onClick={handleSplitOverflow}
                                         >
@@ -383,11 +394,25 @@ export function PageEditor({
                                         </p>
                                     </TooltipContent>
                                 </Tooltip>
-                            </TooltipProvider>
-                        )}
-                    </div>
+                            )}
+                        </div>
+                    </TooltipProvider>
                 )}
             </div>
         </div>
     )
 }
+
+/**
+ * Memoized PageEditor -- only re-renders when its own content/props change.
+ * This prevents the render cascade where editing page 3 re-renders pages 1, 2, 4, 5, etc.
+ */
+export const PageEditor = React.memo(PageEditorInner, (prev, next) => {
+    return (
+        prev.content === next.content &&
+        prev.pageNumber === next.pageNumber &&
+        prev.totalPages === next.totalPages &&
+        prev.settings.orientation === next.settings.orientation &&
+        prev.hideToolbar === next.hideToolbar
+    )
+})

@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useState, useCallback, useEffect, useRef, useMemo } from "react"
-import { motion } from "framer-motion"
+import { motion } from "motion/react"
 import { Upload, Trash, Trash2, Eye, CheckCircle, X } from "lucide-react"
 import CircularProgress from "@/components/ui-custom/circular-progress"
 import { Card, CardContent } from "@/components/ui/card"
