@@ -35,6 +35,7 @@ export function ChatComponent({
     setEditingRange: (range: { start: number; end: number } | null) => void;
     clearSelection: () => void;
 }) {
+    console.log("🎭 ChatComponent: llmContext", llmContext);
     const [llmBudget, setLlmBudget] = useState<{ budget: number, used: number }>({ budget: 0, used: 0 });
     const [chatInput, setChatInput] = useState('');
     const [isStreaming, setIsStreaming] = useState(false);

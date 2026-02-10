@@ -17,6 +17,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ChatComponent } from "@/components/chat-component/for-mdx";
 import { MDXEditorMethods } from "@mdxeditor/editor";
 import { ToggleSwitch } from "@/components/ui-custom/toggle-switch";
+import { RangeSelection } from "lexical";
+import { findTextInMarkdown } from "@/lib/markdown-utils";
 
 
 const defaultPageSettings: PageSettings = {
@@ -138,25 +140,32 @@ function StepFullAFSContent({
     })
 
     // Handle text selection (markdown-based positions)
-    const handleMouseUp = useCallback((selection: any) => {
+    const handleMouseUp = useCallback((selection: RangeSelection) => {
         const selectedText = selection.getTextContent();
         const currentPageMarkdown = pagesRef.current[currentPage - 1]?.content || "";
 
         if (selectedText && selectedText.trim()) {
             const trimmedText = selectedText.trim();
-            const startIndex = currentPageMarkdown.indexOf(trimmedText);
 
-            if (startIndex !== -1) {
+            // Find position in markdown using the utility function
+            const markdownPos = findTextInMarkdown(
+                currentPageMarkdown,
+                trimmedText,
+                { start: selection.anchor.offset, end: selection.focus.offset }
+            );
+
+            if (markdownPos) {
                 setSelection({
                     text: trimmedText,
-                    start: startIndex,
-                    end: startIndex + trimmedText.length,
+                    start: markdownPos.startOffset,
+                    end: markdownPos.endOffset,
                 });
             } else {
+                // Fallback to lexical positions if markdown mapping fails
                 setSelection({
                     text: trimmedText,
-                    start: selection.anchor?.offset || 0,
-                    end: selection.focus?.offset || trimmedText.length,
+                    start: selection.anchor.offset,
+                    end: selection.focus.offset,
                 });
             }
         }

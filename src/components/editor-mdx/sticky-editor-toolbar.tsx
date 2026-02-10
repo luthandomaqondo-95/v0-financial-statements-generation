@@ -65,7 +65,7 @@ const ToolbarButton = React.memo(function ToolbarButton({
 })
 
 export function StickyEditorToolbar({ className, onToggleDiffMode }: StickyEditorToolbarProps) {
-    const { activeEditorRef, activePageIndex, currentBlockType } = useEditorContext()
+    const { activeEditorRef, activePageIndex, totalPages, currentBlockType } = useEditorContext()
     const [isDiffMode, setIsDiffMode] = useState(false)
 
     const getSelectedText = useCallback(() => {
@@ -202,16 +202,16 @@ export function StickyEditorToolbar({ className, onToggleDiffMode }: StickyEdito
                             newLine = cleanText
                             break
                         case "h1":
-                            newLine = `# ${cleanText || 'Heading 1'}`
+                            newLine = `# ${cleanText || 'Heading 1'} #\n`
                             break
                         case "h2":
-                            newLine = `## ${cleanText || 'Heading 2'}`
+                            newLine = `## ${cleanText || 'Heading 2'} ##\n`
                             break
                         case "h3":
-                            newLine = `### ${cleanText || 'Heading 3'}`
+                            newLine = `### ${cleanText || 'Heading 3'} ###\n`
                             break
                         case "h4":
-                            newLine = `#### ${cleanText || 'Heading 4'}`
+                            newLine = `#### ${cleanText || 'Heading 4'} ####\n`
                             break
                         case "blockquote":
                             newLine = `> ${cleanText || 'Quote text'}`
@@ -312,20 +312,20 @@ export function StickyEditorToolbar({ className, onToggleDiffMode }: StickyEdito
         <TooltipProvider>
             <div
                 className={cn(
-                    "sticky top-0 z-50 flex items-center gap-1 px-3 py-2 shadow-sm transition-opacity duration-200 sticky-toolbar-light",
+                    "sticky top-0 z-50 flex items-center gap-1 px-3 py-2 transition-opacity duration-200 sticky-toolbar-light",
                     !isActive && "opacity-50",
                     className,
                 )}
-                style={{
-                    background: "white",
-                    borderBottom: "1px solid #e5e7eb",
-                    colorScheme: "light",
-                }}
+                // style={{
+                //     background: "white",
+                //     borderBottom: "1px solid #e5e7eb",
+                //     colorScheme: "light",
+                // }}
             >
                 {/* Active page indicator */}
-                <div className="flex items-center gap-2 pr-3 mr-2" style={{ borderRight: "1px solid #e5e7eb" }}>
+                <div className="fixed bottom-4 right-12 flex items-center gap-2 px-2 py-1 rounded-lg bg-card shadow-sm">
                     <span className="text-xs" style={{ color: "#6b7280" }}>
-                        {isActive ? `Page ${(activePageIndex ?? 0) + 1}` : "Click on a page to edit"}
+                        {isActive ? `Page ${(activePageIndex ?? 0) + 1} ${totalPages ? `of ${totalPages}` : ""}` : "Click on a page to edit"}
                     </span>
                 </div>
 

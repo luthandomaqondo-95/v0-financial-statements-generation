@@ -13,6 +13,7 @@ interface EditorContextType {
     activeEditorRef: RefObject<MDXEditorMethods | null> | null
     setActiveEditor: (ref: RefObject<MDXEditorMethods | null> | null) => void
     activePageIndex: number | null
+    totalPages: number | null
     setActivePageIndex: (index: number | null) => void
 
     // Page-level history
@@ -37,7 +38,7 @@ const MAX_HISTORY = 50;
 export function EditorProvider({ children }: { children: ReactNode }) {
     const [activeEditorRef, setActiveEditorRef] = useState<RefObject<MDXEditorMethods | null> | null>(null)
     const [activePageIndex, setActivePageIndex] = useState<number | null>(null)
-
+    const [totalPages, setTotalPages] = useState<number>(0)
     // Page-level history management
     const [history, setHistory] = useState<PageHistoryEntry[]>([]);
     const [historyIndex, setHistoryIndex] = useState(-1);
@@ -51,6 +52,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
     }, [])
 
     const pushHistory = useCallback((pages: PageData[], hasTableOfContents: boolean) => {
+        setTotalPages(pages.length)
         setHistory((prev) => {
             // Remove any redo history when a new action is performed
             const newHistory = prev.slice(0, historyIndex + 1);
@@ -94,6 +96,7 @@ export function EditorProvider({ children }: { children: ReactNode }) {
                 activeEditorRef,
                 setActiveEditor,
                 activePageIndex,
+                totalPages,
                 setActivePageIndex,
 
                 pushHistory,
