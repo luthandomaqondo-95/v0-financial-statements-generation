@@ -1,689 +1,544 @@
-@import 'tailwindcss';
-@import 'tw-animate-css';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-@custom-variant dark (&:is(.dark *));
+@layer base {
+	:root {
+		--background: 255, 255, 255;
+		--foreground: 10, 10, 10;
+		--card: 245, 245, 245;
+		--card-foreground: 10, 10, 10;
+		--popover: 255, 255, 255;
+		--popover-foreground: 10, 10, 10;
+		--primary: 255, 128, 0;
+		--primary-foreground: 250, 250, 250;
+		--secondary: 245, 245, 245;
+		--secondary-foreground: 23, 23, 23;
+		--muted: 20, 20, 20;
+		--muted-foreground: 115, 115, 115;
+		--accent: 245, 245, 245;
+		--accent-foreground: 179, 89, 0;
+		--destructive: 239, 68, 68;
+		--destructive-foreground: 250, 250, 250;
+		--border: 229, 229, 229;
+		--input: 229, 229, 229;
+		--ring: 10, 10, 10;
+		--chart-1: 232, 121, 93;
+		--chart-2: 41, 155, 155;
+		--chart-3: 38, 83, 97;
+		--chart-4: 237, 209, 89;
+		--chart-5: 242, 142, 75;
+		--radius: 1.61rem;
+		--sidebar-background: 250, 250, 250;
+		--sidebar-foreground: 64, 64, 64;
+		--sidebar-primary: 26, 26, 26;
+		--sidebar-primary-foreground: 250, 250, 250;
+		--sidebar-accent: 244, 244, 244;
+		--sidebar-accent-foreground: 255, 128, 0;
+		--sidebar-border: 222, 225, 230;
+		--sidebar-ring: 59, 130, 246;
+	}
 
-:root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.145 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.145 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.985 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.396 0.141 25.723);
-  --destructive-foreground: oklch(0.637 0.237 25.331);
-  --border: oklch(0.269 0 0);
-  --input: oklch(0.269 0 0);
-  --ring: oklch(0.439 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(0.269 0 0);
-  --sidebar-ring: oklch(0.439 0 0);
-}
-
-@theme inline {
-  --font-sans: 'Geist', 'Geist Fallback';
-  --font-mono: 'Geist Mono', 'Geist Mono Fallback';
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --color-card: var(--card);
-  --color-card-foreground: var(--card-foreground);
-  --color-popover: var(--popover);
-  --color-popover-foreground: var(--popover-foreground);
-  --color-primary: var(--primary);
-  --color-primary-foreground: var(--primary-foreground);
-  --color-secondary: var(--secondary);
-  --color-secondary-foreground: var(--secondary-foreground);
-  --color-muted: var(--muted);
-  --color-muted-foreground: var(--muted-foreground);
-  --color-accent: var(--accent);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-destructive: var(--destructive);
-  --color-destructive-foreground: var(--destructive-foreground);
-  --color-border: var(--border);
-  --color-input: var(--input);
-  --color-ring: var(--ring);
-  --color-chart-1: var(--chart-1);
-  --color-chart-2: var(--chart-2);
-  --color-chart-3: var(--chart-3);
-  --color-chart-4: var(--chart-4);
-  --color-chart-5: var(--chart-5);
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-  --color-sidebar: var(--sidebar);
-  --color-sidebar-foreground: var(--sidebar-foreground);
-  --color-sidebar-primary: var(--sidebar-primary);
-  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-  --color-sidebar-accent: var(--sidebar-accent);
-  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-  --color-sidebar-border: var(--sidebar-border);
-  --color-sidebar-ring: var(--sidebar-ring);
+	.dark {
+		--background: 10, 10, 10;
+		--foreground: 250, 250, 250;
+		--card: 20, 20, 20;
+		--card-foreground: 250, 250, 250;
+		--popover: 10, 10, 10;
+		--popover-foreground: 250, 250, 250;
+		--primary: 255, 128, 0;
+		--primary-foreground: 23, 23, 23;
+		--secondary: 38, 38, 38;
+		--secondary-foreground: 250, 250, 250;
+		--muted: 38, 38, 38;
+		--muted-foreground: 163, 163, 163;
+		--accent: 38, 38, 38;
+		--accent-foreground: 250, 250, 250;
+		--destructive: 127, 29, 29;
+		--destructive-foreground: 250, 250, 250;
+		--border: 38, 38, 38;
+		--input: 38, 38, 38;
+		--ring: 212, 212, 212;
+		--chart-1: 38, 89, 191;
+		--chart-2: 46, 184, 138;
+		--chart-3: 230, 138, 46;
+		--chart-4: 179, 89, 230;
+		--chart-5: 230, 77, 115;
+		--sidebar-background: 26, 26, 26;
+		--sidebar-foreground: 244, 244, 244;
+		--sidebar-primary: 43, 108, 176;
+		--sidebar-primary-foreground: 255, 255, 255;
+		--sidebar-accent: 41, 41, 41;
+		--sidebar-accent-foreground: 244, 244, 244;
+		--sidebar-border: 41, 41, 41;
+		--sidebar-ring: 59, 130, 246;
+	}
 }
 
 @layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-}
-
-/* MDX Editor - Force Light Mode for Paper/Page */
-.mdx-editor-wrapper {
-  /* Remove dark mode styling from the editor */
-  color-scheme: light !important;
-}
-
-.mdx-editor-wrapper .mdxeditor {
-  background: white !important;
-  color: #1f2937 !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-toolbar {
-  background: #f9fafb !important;
-  border-bottom: 1px solid #e5e7eb !important;
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 10 !important;
-}
-
-/* Page editor specific - make toolbar sticky within page container */
-.page-editor-container {
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-/* The wrapper passes through height to mdxeditor */
-.page-editor-mdx {
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-/* MDXEditor is the scroll container - both toolbar and content inside */
-.page-editor-mdx .mdxeditor {
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100% !important;
-  overflow-y: auto !important;
-  overflow-x: hidden !important;
-}
-
-/* Toolbar sticks to top of the mdxeditor scroll container */
-.page-editor-mdx .mdxeditor-toolbar {
-  flex-shrink: 0 !important;
-  position: sticky !important;
-  top: 0 !important;
-  z-index: 20 !important;
-  background: #f9fafb !important;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* Content area flows naturally, no separate scroll */
-.page-editor-mdx .mdxeditor-root-contenteditable {
-  flex: 1 0 auto !important;
-  overflow: visible !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-toolbar button,
-.mdx-editor-wrapper .mdxeditor-toolbar [role="button"] {
-  color: #374151 !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-toolbar button:hover,
-.mdx-editor-wrapper .mdxeditor-toolbar [role="button"]:hover {
-  background: #e5e7eb !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-root-contenteditable {
-  background: white !important;
-  color: #1f2937 !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-root-contenteditable h1,
-.mdx-editor-wrapper .mdxeditor-root-contenteditable h2,
-.mdx-editor-wrapper .mdxeditor-root-contenteditable h3,
-.mdx-editor-wrapper .mdxeditor-root-contenteditable h4,
-.mdx-editor-wrapper .mdxeditor-root-contenteditable h5,
-.mdx-editor-wrapper .mdxeditor-root-contenteditable h6 {
-  color: #111827 !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-root-contenteditable p,
-.mdx-editor-wrapper .mdxeditor-root-contenteditable li,
-.mdx-editor-wrapper .mdxeditor-root-contenteditable td,
-.mdx-editor-wrapper .mdxeditor-root-contenteditable th {
-  color: #1f2937 !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-root-contenteditable table {
-  border-color: #d1d5db !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-root-contenteditable th {
-  background: #f3f4f6 !important;
-  border-color: #d1d5db !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-root-contenteditable td {
-  border-color: #e5e7eb !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-root-contenteditable blockquote {
-  border-left-color: #d1d5db !important;
-  color: #4b5563 !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-root-contenteditable code {
-  background: #f3f4f6 !important;
-  color: #1f2937 !important;
-}
-
-.mdx-editor-wrapper .mdxeditor-root-contenteditable hr {
-  border-color: #d1d5db !important;
-}
-
-/* Page container light mode enforcement */
-.page-paper {
-  background: white !important;
-  color: #1f2937 !important;
-  color-scheme: light !important;
-}
-
-/* MDX Editor without toolbar - takes full height */
-.page-editor-mdx-no-toolbar {
-  height: 100% !important;
-  display: flex !important;
-  flex-direction: column !important;
-}
-
-.page-editor-mdx-no-toolbar .mdxeditor {
-  display: flex !important;
-  flex-direction: column !important;
-  height: 100% !important;
-}
-
-.page-editor-mdx-no-toolbar .mdxeditor-root-contenteditable {
-  flex: 1 !important;
-}
-
-/* Hide any residual toolbar styling when hidden */
-.mdx-editor-no-toolbar .mdxeditor-toolbar {
-  display: none !important;
-}
-
-/* Sticky Editor Toolbar - Force Light Mode */
-.sticky-toolbar-light {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  color-scheme: light !important;
-}
-
-/* Ensure all buttons within sticky toolbar use light mode */
-.sticky-toolbar-light button,
-.sticky-toolbar-light [role="button"] {
-  color: #374151 !important;
-}
-
-.sticky-toolbar-light button:hover,
-.sticky-toolbar-light [role="button"]:hover {
-  background: #e5e7eb !important;
-}
-
-.sticky-toolbar-light button:disabled,
-.sticky-toolbar-light [role="button"]:disabled {
-  color: #9ca3af !important;
-  opacity: 0.5;
-}
-
-/* Separator styling for light mode */
-.sticky-toolbar-light [data-orientation="vertical"] {
-  background: #e5e7eb !important;
-}
-
-/* Select/Dropdown trigger styling */
-.sticky-toolbar-light [data-radix-collection-item] {
-  color: #374151 !important;
-}
-
-.sticky-toolbar-light button[role="combobox"],
-.sticky-toolbar-light [data-slot="select-trigger"] {
-  background: white !important;
-  border-color: #e5e7eb !important;
-  color: #374151 !important;
-}
-
-.sticky-toolbar-light button[role="combobox"]:hover,
-.sticky-toolbar-light [data-slot="select-trigger"]:hover {
-  background: #f9fafb !important;
-}
-
-/* Icon colors within toolbar */
-.sticky-toolbar-light svg {
-  color: #374151 !important;
-}
-
-.sticky-toolbar-light button:disabled svg {
-  color: #9ca3af !important;
-}
-
-/* Select dropdown content (renders in portal, needs separate styling) */
-[data-radix-popper-content-wrapper] [role="listbox"] {
-  background: white !important;
-  border-color: #e5e7eb !important;
-  color: #374151 !important;
-}
-
-[data-radix-popper-content-wrapper] [role="option"] {
-  color: #374151 !important;
-}
-
-[data-radix-popper-content-wrapper] [role="option"]:hover,
-[data-radix-popper-content-wrapper] [role="option"][data-highlighted] {
-  background: #f3f4f6 !important;
-}
-
-[data-radix-popper-content-wrapper] [role="option"] svg {
-  color: #374151 !important;
-}
-
-/* Tooltip content (renders in portal) */
-[data-radix-popper-content-wrapper] [role="tooltip"] {
-  background: #1f2937 !important;
-  color: white !important;
-}
-
-/* Lexical Editor Styles - Force Light Mode for Paper/Page */
-.lexical-editor-wrapper {
-    color-scheme: light !important;
-    background: white !important;
-    color: #1f2937 !important;
-}
-
-/* Lexical content editable */
-.lexical-editor-wrapper [contenteditable="true"] {
-    background: white !important;
-    color: #1f2937 !important;
-    outline: none !important;
-}
-
-/* Lexical headings */
-.lexical-editor-wrapper h1,
-.lexical-editor-wrapper h2,
-.lexical-editor-wrapper h3,
-.lexical-editor-wrapper h4,
-.lexical-editor-wrapper h5,
-.lexical-editor-wrapper h6 {
-    color: #111827 !important;
-}
-
-/* Lexical paragraphs and lists */
-.lexical-editor-wrapper p,
-.lexical-editor-wrapper li,
-.lexical-editor-wrapper td,
-.lexical-editor-wrapper th {
-    color: #1f2937 !important;
-}
-
-/* Lexical tables */
-.lexical-editor-wrapper table {
-    border-color: #d1d5db !important;
-    border-collapse: collapse;
-    width: 100%;
-}
-
-.lexical-editor-wrapper th {
-    background: #f3f4f6 !important;
-    border: 1px solid #d1d5db !important;
-    padding: 0.5rem;
-    font-weight: 600;
-}
-
-.lexical-editor-wrapper td {
-    border: 1px solid #e5e7eb !important;
-    padding: 0.5rem;
-}
-
-/* Lexical blockquotes */
-.lexical-editor-wrapper blockquote {
-    border-left: 4px solid #d1d5db !important;
-    padding-left: 1rem;
-    margin-left: 0;
-    color: #4b5563 !important;
-    font-style: italic;
-}
-
-/* Lexical code */
-.lexical-editor-wrapper code {
-    background: #f3f4f6 !important;
-    color: #1f2937 !important;
-    padding: 0.125rem 0.25rem;
-    border-radius: 0.25rem;
-    font-family: var(--font-mono);
-    font-size: 0.875em;
-}
-
-.lexical-editor-wrapper pre {
-    background: #f3f4f6 !important;
-    color: #1f2937 !important;
-    padding: 1rem;
-    border-radius: 0.375rem;
-    overflow-x: auto;
-    margin: 0.5rem 0;
-}
-
-.lexical-editor-wrapper pre code {
-    background: transparent !important;
-    padding: 0;
-}
-
-/* Lexical horizontal rule */
-.lexical-editor-wrapper hr {
-    border: none;
-    border-top: 1px solid #d1d5db !important;
-    margin: 1rem 0;
-}
-
-/* Lexical links */
-.lexical-editor-wrapper a {
-    color: #2563eb !important;
-    text-decoration: underline;
-}
-
-.lexical-editor-wrapper a:hover {
-    color: #1d4ed8 !important;
-}
-
-/* Lexical lists */
-.lexical-editor-wrapper ul {
-    list-style-type: disc;
-    padding-left: 1.5rem;
-    margin: 0.5rem 0;
-}
-
-.lexical-editor-wrapper ol {
-    list-style-type: decimal;
-    padding-left: 1.5rem;
-    margin: 0.5rem 0;
-}
-
-.lexical-editor-wrapper li {
-    margin: 0.25rem 0;
-}
-
-/* Lexical placeholder */
-.lexical-editor-wrapper [data-lexical-placeholder] {
-    color: #9ca3af !important;
-    pointer-events: none;
-    user-select: none;
-}
-
-/* Lexical selection */
-.lexical-editor-wrapper ::selection {
-    background: #dbeafe;
-    color: #1f2937;
-}
-
-/* Page editor container for Lexical */
-.lexical-page-editor-container {
-    height: 100% !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: visible !important;
-}
-
-/* Ensure Lexical editor inherits proper sizing */
-.lexical-page-editor-container > div {
-    height: 100%;
-    width: 100%;
-}
-
-/* Sticky Lexical Toolbar - Force Light Mode */
-.sticky-lexical-toolbar-light {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
-    color-scheme: light !important;
-    background: white !important;
-}
-
-/* Lexical toolbar button styles */
-.sticky-lexical-toolbar-light button,
-.sticky-lexical-toolbar-light [role="button"] {
-    color: #374151 !important;
-}
-
-.sticky-lexical-toolbar-light button:hover,
-.sticky-lexical-toolbar-light [role="button"]:hover {
-    background: #e5e7eb !important;
-}
-
-.sticky-lexical-toolbar-light button:disabled,
-.sticky-lexical-toolbar-light [role="button"]:disabled {
-    color: #9ca3af !important;
-    opacity: 0.5;
-}
-
-.sticky-lexical-toolbar-light svg {
-    color: #374151 !important;
-}
-
-.sticky-lexical-toolbar-light button:disabled svg {
-    color: #9ca3af !important;
-}
-
-/* AI Edit Effects - Canvas and Cursor Style Animations */
-
-/* Canvas-style: Yellow highlight for pending edits */
-.ai-highlight-pending {
-    background-color: #fef3c7 !important;
-    border-left: 3px solid #f59e0b !important;
-    padding-left: 0.75rem !important;
-    transition: all 300ms ease-in-out;
-    animation: ai-pulse-pending 2s ease-in-out infinite;
-}
-
-@keyframes ai-pulse-pending {
-    0%, 100% {
-        background-color: #fef3c7;
+	* {
+		@apply border-border;
+	}
+
+	body {
+		@apply bg-background text-foreground;
+	}
+}
+
+@layer components {
+    .btn-gradient {
+        background-image: linear-gradient(135deg, rgb(249, 115, 22) 0%, rgb(234, 179, 8) 100%);
+        color: white;
+        transition: all 0.3s ease;
     }
-    50% {
-        background-color: #fde68a;
+
+    .btn-gradient:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     }
-}
 
-/* Cursor-style: Blue highlight with streaming effect for active edits */
-.ai-editing-active {
-    background-color: #dbeafe !important;
-    border-left: 4px solid #3b82f6 !important;
-    padding-left: 0.75rem !important;
-    transition: all 200ms ease-in-out;
-    position: relative;
-}
-
-.ai-editing-active::after {
-    content: '';
-    position: absolute;
-    right: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 2px;
-    height: 1rem;
-    background-color: #3b82f6;
-    animation: ai-cursor-blink 1s step-end infinite;
-}
-
-@keyframes ai-cursor-blink {
-    0%, 50% {
-        opacity: 1;
+    /* ContentEditable Checkbox Styles - Windows-like */
+    [contenteditable="true"] input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        width: 16px;
+        height: 16px;
+        border: 1px solid #666;
+        border-radius: 2px;
+        background-color: white;
+        cursor: pointer;
+        position: relative;
+        vertical-align: middle;
+        margin-right: 8px;
+        margin-left: 4px;
+        transition: all 0.15s ease;
+        box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.1);
     }
-    51%, 100% {
-        opacity: 0;
+
+    [contenteditable="true"] input[type="checkbox"]:checked {
+        background-color: #0078d4;
+        border-color: #0078d4;
+        box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.2);
     }
-}
 
-/* Fade out effect after edit completes */
-.ai-editing-complete {
-    animation: ai-fade-out 500ms ease-out forwards;
-}
-
-@keyframes ai-fade-out {
-    from {
-        background-color: #dbeafe;
-        border-left-color: #3b82f6;
+    [contenteditable="true"] input[type="checkbox"]:checked::after {
+        content: '';
+        position: absolute;
+        left: 5px;
+        top: 2px;
+        width: 4px;
+        height: 8px;
+        border: solid white;
+        border-width: 0 2px 2px 0;
+        transform: rotate(45deg);
     }
-    to {
-        background-color: transparent;
-        border-left-color: transparent;
+
+    [contenteditable="true"] input[type="checkbox"]:hover {
+        border-color: #0078d4;
     }
-}
 
-/* Streaming text indicator */
-.ai-streaming-indicator {
-    display: inline-block;
-    width: 0.5rem;
-    height: 1rem;
-    background-color: #3b82f6;
-    margin-left: 0.125rem;
-    animation: ai-cursor-blink 1s step-end infinite;
-}
-
-/* Smooth transitions for all AI effects */
-.ai-highlight-pending,
-.ai-editing-active,
-.ai-editing-complete {
-    will-change: background-color, border-left-color;
-}
-
-/* Dark mode support for AI effects */
-.dark .ai-highlight-pending {
-    background-color: #78350f !important;
-    border-left-color: #f59e0b !important;
-}
-
-@keyframes ai-pulse-pending-dark {
-    0%, 100% {
-        background-color: #78350f;
+    [contenteditable="true"] input[type="checkbox"]:focus {
+        outline: 2px solid #0078d4;
+        outline-offset: 1px;
     }
-    50% {
-        background-color: #92400e;
+
+    /* Dark mode checkbox styles - Windows-like */
+    .dark [contenteditable="true"] input[type="checkbox"] {
+        background-color: #2d2d30;
+        border-color: #6b7280;
+        box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.3);
     }
-}
 
-.dark .ai-highlight-pending {
-    animation: ai-pulse-pending-dark 2s ease-in-out infinite;
-}
-
-.dark .ai-editing-active {
-    background-color: #1e3a8a !important;
-    border-left-color: #3b82f6 !important;
-}
-
-.dark .ai-editing-active::after {
-    background-color: #60a5fa;
-}
-
-@keyframes ai-fade-out-dark {
-    from {
-        background-color: #1e3a8a;
-        border-left-color: #3b82f6;
+    .dark [contenteditable="true"] input[type="checkbox"]:checked {
+        background-color: #0078d4;
+        border-color: #0078d4;
+        box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.4);
     }
-    to {
-        background-color: transparent;
-        border-left-color: transparent;
+
+    .dark [contenteditable="true"] input[type="checkbox"]:hover {
+        border-color: #0078d4;
     }
-}
 
-.dark .ai-editing-complete {
-    animation: ai-fade-out-dark 500ms ease-out forwards;
-}
+    .dark [contenteditable="true"] input[type="checkbox"]:focus {
+        outline: 2px solid #0078d4;
+        outline-offset: 1px;
+    }
 
-.dark .ai-streaming-indicator {
-    background-color: #60a5fa;
+    /* List styles for contenteditable areas */
+    [contenteditable="true"] ul,
+    [contenteditable="true"] ol {
+        margin: 0.5em 0;
+        padding-left: 2em;
+    }
+
+    [contenteditable="true"] li {
+        margin: 0.25em 0;
+        line-height: 1.5;
+    }
+
+    [contenteditable="true"] ul {
+        list-style-type: disc;
+    }
+
+    [contenteditable="true"] ol {
+        list-style-type: decimal;
+    }
+
+    /* Checklist list styles - only for unordered lists */
+    [contenteditable="true"] ul[style*="list-style-type: none"] {
+        padding-left: 0;
+    }
+
+    [contenteditable="true"] ul[style*="list-style-type: none"] li {
+        display: flex;
+        align-items: center;
+        margin: 0.25em 0;
+        padding: 0.25em 0;
+    }
+
+    [contenteditable="true"] ul[style*="list-style-type: none"] li input[type="checkbox"] {
+        margin-right: 8px;
+        margin-left: 4px;
+        flex-shrink: 0;
+    }
+
+    [contenteditable="true"] ul[style*="list-style-type: none"] li span {
+        flex: 1;
+    }
+
+    /* Ensure numbered lists don't have checkboxes */
+    [contenteditable="true"] ol li input[type="checkbox"] {
+        display: none;
+    }
+
+    /* Horizontal Rule Styles */
+    [contenteditable="true"] hr {
+        border: none;
+        border-top: 2px solid #e5e7eb;
+        margin: 1em 0;
+        height: 1px;
+    }
+
+    .dark [contenteditable="true"] hr {
+        border-top-color: #374151;
+    }
+
+    /* Text Color and Background Highlight Support */
+    [contenteditable="true"] span[style*="color"] {
+        display: inline;
+    }
+
+    [contenteditable="true"] span[style*="background-color"] {
+        display: inline;
+    }
+
+    /* Superscript and Subscript Styles */
+    [contenteditable="true"] sup {
+        vertical-align: super;
+        font-size: smaller;
+    }
+
+    [contenteditable="true"] sub {
+        vertical-align: sub;
+        font-size: smaller;
+    }
+
+    /* Strikethrough Styles */
+    [contenteditable="true"] s,
+    [contenteditable="true"] strike {
+        text-decoration: line-through;
+    }
+
+    /* Indentation Styles */
+    [contenteditable="true"] blockquote {
+        margin: 0.5em 0;
+        padding-left: 1em;
+        border-left: 3px solid #e5e7eb;
+    }
+
+    .dark [contenteditable="true"] blockquote {
+        border-left-color: #374151;
+    }
+
+    /* AFS Content List Styles - Override prose conflicts */
+    .contenteditable-section-editor ul,
+    .contenteditable-section-editor ol {
+        margin: 0.5em 0 !important;
+        padding-left: 2em !important;
+        list-style-position: outside !important;
+    }
+
+    .contenteditable-section-editor li {
+        margin: 0.25em 0 !important;
+        line-height: 1.5 !important;
+        display: list-item !important;
+    }
+
+    .contenteditable-section-editor ul {
+        list-style-type: disc !important;
+    }
+
+    .contenteditable-section-editor ol {
+        list-style-type: decimal !important;
+    }
+
+    /* Ensure lists are visible in preview mode */
+    .contenteditable-section-editor[contenteditable="false"] ul,
+    .contenteditable-section-editor[contenteditable="false"] ol {
+        margin: 0.5em 0 !important;
+        padding-left: 2em !important;
+        list-style-position: outside !important;
+    }
+
+    .contenteditable-section-editor[contenteditable="false"] li {
+        margin: 0.25em 0 !important;
+        line-height: 1.5 !important;
+        display: list-item !important;
+    }
+
+    .contenteditable-section-editor[contenteditable="false"] ul {
+        list-style-type: disc !important;
+    }
+
+    .contenteditable-section-editor[contenteditable="false"] ol {
+        list-style-type: decimal !important;
+    }
+
+    /* Override LexicalInlineEditor table styles for content editor */
+    .contenteditable-section-editor table {
+        border-collapse: collapse !important;
+        margin: 1em 0 !important;
+        width: 100% !important;
+    }
+
+    .contenteditable-section-editor th,
+    .contenteditable-section-editor td {
+        border: 1px solid #e5e7eb !important;
+        padding: 0.5em !important;
+        text-align: left !important;
+    }
+
+    .contenteditable-section-editor th {
+        background-color: #f9fafb !important;
+        font-weight: 600 !important;
+    }
+
+    /* Dark mode overrides for content editor tables */
+    .dark .contenteditable-section-editor th {
+        background-color: #374151 !important;
+        color: #f9fafb !important;
+        border-color: #6b7280 !important;
+    }
+
+    .dark .contenteditable-section-editor td {
+        color: #f3f4f6 !important;
+        border-color: #6b7280 !important;
+    }
+
+    /* Ensure preview mode tables also work */
+    .contenteditable-section-editor[contenteditable="false"] table {
+        border-collapse: collapse !important;
+        margin: 1em 0 !important;
+        width: 100% !important;
+    }
+
+    .contenteditable-section-editor[contenteditable="false"] th,
+    .contenteditable-section-editor[contenteditable="false"] td {
+        border: 1px solid #e5e7eb !important;
+        padding: 0.5em !important;
+        text-align: left !important;
+    }
+
+    .contenteditable-section-editor[contenteditable="false"] th {
+        background-color: #f9fafb !important;
+        font-weight: 600 !important;
+    }
+
+    /* Dark mode overrides for preview mode tables */
+    .dark .contenteditable-section-editor[contenteditable="false"] th {
+        background-color: #374151 !important;
+        color: #f9fafb !important;
+        border-color: #6b7280 !important;
+    }
+
+    .dark .contenteditable-section-editor[contenteditable="false"] td {
+        color: #f3f4f6 !important;
+        border-color: #6b7280 !important;
+    }
+
+    /* Ensure font changes work in contenteditable areas */
+    .contenteditable-section-editor span[style*="font-family"] {
+        font-family: inherit !important;
+    }
+
+    .contenteditable-section-editor span[style*="font-size"] {
+        font-size: inherit !important;
+    }
+
+    /* Allow font changes to override default styles */
+    .contenteditable-section-editor *[style*="font-family"] {
+        font-family: inherit !important;
+    }
+
+    .contenteditable-section-editor *[style*="font-size"] {
+        font-size: inherit !important;
+    }
+
+    /* Ensure toolbar font changes take precedence */
+    .contenteditable-section-editor span[data-font-family] {
+        font-family: var(--font-family) !important;
+    }
+
+    .contenteditable-section-editor span[data-font-size] {
+        font-size: var(--font-size) !important;
+    }
+
+    /* MDX Editor Custom Styles */
+    .mdx-editor-wrapper {
+        width: 100%;
+    }
+
+    /* MDX Editor Toolbar Styling */
+    .mdx-editor-wrapper ._toolbarRoot_xsit3_1 {
+        background-color: #f9fafb !important;
+        border-bottom: 1px solid #e5e7eb !important;
+        padding: 0.5rem !important;
+        border-radius: 0.5rem 0.5rem 0 0 !important;
+    }
+
+    .dark .mdx-editor-wrapper ._toolbarRoot_xsit3_1 {
+        background-color: #1f2937 !important;
+        border-bottom: 1px solid #374151 !important;
+    }
+
+    /* MDX Editor Content Area */
+    .mdx-editor-wrapper ._rootContentEditableWrapper_xsit3_218 {
+        padding: 1rem !important;
+        min-height: 150px !important;
+        background-color: white !important;
+        border-radius: 0 0 0.5rem 0.5rem !important;
+    }
+
+    .dark .mdx-editor-wrapper ._rootContentEditableWrapper_xsit3_218 {
+        background-color: #1f2937 !important;
+        color: #f9fafb !important;
+    }
+
+    /* MDX Editor Focus States */
+    .mdx-editor-wrapper [contentEditable]:focus {
+        outline: none !important;
+    }
+
+    /* MDX Editor List Styles */
+    .mdx-editor-wrapper ul {
+        list-style-type: disc !important;
+        margin-left: 1.5rem !important;
+        padding-left: 0.5rem !important;
+    }
+
+    .mdx-editor-wrapper ol {
+        list-style-type: decimal !important;
+        margin-left: 1.5rem !important;
+        padding-left: 0.5rem !important;
+    }
+
+    .mdx-editor-wrapper li {
+        margin: 0.25rem 0 !important;
+    }
+
+    /* MDX Editor Link Styles */
+    .mdx-editor-wrapper a {
+        color: #2563eb !important;
+        text-decoration: underline !important;
+    }
+
+    .dark .mdx-editor-wrapper a {
+        color: #60a5fa !important;
+    }
+
+    /* MDX Editor Table Styles */
+    .mdx-editor-wrapper table {
+        border-collapse: collapse !important;
+        width: 100% !important;
+        margin: 1rem 0 !important;
+    }
+
+    .mdx-editor-wrapper th,
+    .mdx-editor-wrapper td {
+        border: 1px solid #e5e7eb !important;
+        padding: 0.5rem !important;
+    }
+
+    .dark .mdx-editor-wrapper th,
+    .dark .mdx-editor-wrapper td {
+        border-color: #374151 !important;
+    }
+
+    .mdx-editor-wrapper th {
+        background-color: #f9fafb !important;
+        font-weight: 600 !important;
+    }
+
+    .dark .mdx-editor-wrapper th {
+        background-color: #374151 !important;
+    }
+
+    /* MDX Editor Blockquote Styles */
+    .mdx-editor-wrapper blockquote {
+        border-left: 3px solid #e5e7eb !important;
+        padding-left: 1rem !important;
+        margin: 1rem 0 !important;
+        color: #6b7280 !important;
+    }
+
+    .dark .mdx-editor-wrapper blockquote {
+        border-left-color: #374151 !important;
+        color: #9ca3af !important;
+    }
+
+    /* MDX Preview Mode Styles */
+    .mdx-section-preview ul {
+        list-style-type: disc !important;
+        margin: 0.5em 0 !important;
+        padding-left: 2em !important;
+    }
+
+    .mdx-section-preview ol {
+        list-style-type: decimal !important;
+        margin: 0.5em 0 !important;
+        padding-left: 2em !important;
+    }
+
+    .mdx-section-preview li {
+        margin: 0.25em 0 !important;
+        display: list-item !important;
+    }
+
+    .mdx-section-preview table {
+        border-collapse: collapse !important;
+        margin: 1em 0 !important;
+        width: 100% !important;
+    }
+
+    .mdx-section-preview th,
+    .mdx-section-preview td {
+        border: 1px solid #e5e7eb !important;
+        padding: 0.5em !important;
+    }
+
+    .dark .mdx-section-preview th,
+    .dark .mdx-section-preview td {
+        border-color: #6b7280 !important;
+    }
+
+    .mdx-section-preview th {
+        background-color: #f9fafb !important;
+        font-weight: 600 !important;
+    }
+
+    .dark .mdx-section-preview th {
+        background-color: #374151 !important;
+    }
 }

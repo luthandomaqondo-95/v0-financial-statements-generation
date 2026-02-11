@@ -5,8 +5,7 @@ import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/providers/theme-provider"
 import { QueryProvider } from "@/providers/query-provider"
-import "@/styles/globals.css"
-import "@mdxeditor/editor/style.css"
+import "../styles/globals.css"
 
 const geistSans = Geist({
   variable: "--font-sans",
@@ -21,7 +20,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "FinGen AI - Financial Statement Generator",
   description: "AI-powered Annual Financial Statements and Management Accounts",
-  generator: "v0.app",
 }
 
 export default function RootLayout({

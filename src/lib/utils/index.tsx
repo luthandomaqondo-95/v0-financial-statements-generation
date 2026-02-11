@@ -5,6 +5,7 @@ import { twMerge } from 'tailwind-merge'
 export function cn(...inputs: ClassValue[]) {
 	return twMerge(clsx(inputs))
 }
+export const sleep = (n: number) => new Promise(r => setTimeout(r, n));
 
 export const formatFileSize = (bytes: number) => {
 	if (bytes === 0) return "0 Bytes"

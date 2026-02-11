@@ -3,6 +3,7 @@
 import dynamic from "next/dynamic"
 import { forwardRef, CSSProperties } from "react"
 import type { MDXEditorMethods, MDXEditorProps } from "@mdxeditor/editor"
+import "@mdxeditor/editor/style.css"
 
 export interface EditorProps extends MDXEditorProps {
     containerClassName?: string

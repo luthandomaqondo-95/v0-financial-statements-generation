@@ -1,0 +1,251 @@
+/* Remirror editor overrides */
+.remirror-editor {
+    outline: none !important;
+    box-shadow: none !important;
+    overflow: none !important;
+    min-height: 400px;
+    font-size: 16px;
+    line-height: 1.7;
+    color: hsl(var(--foreground));
+    caret-color: hsl(var(--primary));
+    background-color: hsl(var(--white));
+    border-radius: 1rem;
+    -ms-overflow-style: none;  /* IE/Edge */
+    scrollbar-width: none;     /* Firefox */
+}
+.remirror-editor::-webkit-scrollbar {
+    display: none; /* Chrome/Safari */
+}
+
+.remirror-editor p {
+    margin-bottom: 0.75em;
+}
+
+.remirror-editor h1 {
+    font-size: 2em;
+    font-weight: 700;
+    margin-bottom: 0.5em;
+    margin-top: 1em;
+    line-height: 1.2;
+    color: hsl(var(--foreground));
+}
+
+.remirror-editor h2 {
+    font-size: 1.5em;
+    font-weight: 600;
+    margin-bottom: 0.5em;
+    margin-top: 0.8em;
+    line-height: 1.3;
+    color: hsl(var(--foreground));
+}
+
+.remirror-editor h3 {
+    font-size: 1.25em;
+    font-weight: 600;
+    margin-bottom: 0.5em;
+    margin-top: 0.6em;
+    line-height: 1.4;
+    color: hsl(var(--foreground));
+}
+
+.remirror-editor ul,
+.remirror-editor ol {
+    padding-left: 1.5em;
+    margin-bottom: 0.75em;
+}
+
+.remirror-editor li {
+    margin-bottom: 0.25em;
+}
+
+.remirror-editor blockquote {
+    border-left: 3px solid hsl(var(--primary));
+    padding-left: 1em;
+    margin: 0.75em 0;
+    color: hsl(var(--muted-foreground));
+    font-style: italic;
+}
+
+.remirror-editor code {
+    background: hsl(var(--muted));
+    padding: 0.15em 0.4em;
+    border-radius: 10px;
+    font-size: 0.9em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.remirror-editor pre {
+    background: hsl(var(--muted));
+    padding: 1em;
+    border-radius: 8px;
+    overflow-x: auto;
+    margin: 0.75em 0;
+}
+
+.remirror-editor pre code {
+    background: none;
+    padding: 0;
+}
+
+.remirror-editor hr {
+    border: none;
+    border-top: 1px solid hsl(var(--border));
+    margin: 1.5em 0;
+}
+
+.remirror-editor img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 0.5em 0;
+}
+
+.remirror-editor table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.75em 0;
+}
+
+.remirror-editor th,
+.remirror-editor td {
+    border: 1px solid hsl(var(--border));
+    padding: 0.5em 0.75em;
+    text-align: left;
+}
+
+.remirror-editor th {
+    background: hsl(var(--muted));
+    font-weight: 600;
+}
+
+.remirror-editor .remirror-is-empty:first-child::before {
+    color: hsl(var(--muted-foreground));
+    font-style: italic;
+}
+
+/* Task list checkbox styling */
+.remirror-editor ul[data-task-list] {
+    list-style: none;
+    padding-left: 1.9em;
+}
+
+.remirror-editor ul[data-task-list] li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5em;
+}
+
+.remirror-editor ul[data-task-list] li input[type="checkbox"] {
+    margin-top: 0.3em;
+    accent-color: hsl(var(--primary));
+}
+
+/* Selection highlight */
+.remirror-editor ::selection {
+    background: hsl(var(--primary) / 0.2);
+}
+
+/* Table hover add-row / add-column buttons */
+.remirror-editor table {
+    position: relative;
+}
+
+.remirror-editor td.ProseMirror-selectednode,
+.remirror-editor th.ProseMirror-selectednode {
+    background: hsl(var(--primary) / 0.1);
+}
+
+/* Highlight mark styling */
+.remirror-editor mark[data-text-highlight-mark] {
+    border-radius: 2px;
+    padding: 0.05em 0.1em;
+}
+
+/* Sub/Sup styles */
+.remirror-editor sub {
+    font-size: 0.75em;
+    vertical-align: sub;
+}
+
+.remirror-editor sup {
+    font-size: 0.75em;
+    vertical-align: super;
+}
+
+/* Link styling */
+.remirror-editor a {
+    color: hsl(var(--primary));
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.remirror-editor a:hover {
+    opacity: 0.8;
+}
+
+/* Remove default remirror theme overrides */
+.remirror-theme {
+    --rmr-color-selection-background: hsl(var(--primary) / 0.15);
+    --rmr-color-selection-shadow: transparent;
+    --rmr-color-selection-text: inherit;
+}
+
+/* ─── AI Edit Decorations ─── */
+
+/* Phase 1: Blue highlight on the target range before streaming starts */
+.ai-edit-highlight {
+    background: hsl(220 80% 60% / 0.18);
+    border-bottom: 2px solid hsl(220 80% 60% / 0.5);
+    border-radius: 2px;
+    transition: background 0.2s ease;
+}
+
+/* Phase 2 (streaming): Remaining old text that hasn't been replaced yet */
+.ai-edit-pending {
+    background: hsl(220 60% 70% / 0.12);
+    border-bottom: 1px dashed hsl(220 60% 70% / 0.4);
+    opacity: 0.6;
+    transition: opacity 0.15s ease;
+}
+
+/* Phase 2 (streaming): Newly inserted text */
+.ai-edit-new-text {
+    background: hsl(145 60% 50% / 0.15);
+    border-bottom: 2px solid hsl(145 60% 50% / 0.4);
+    border-radius: 2px;
+    animation: ai-edit-fade-in 0.15s ease-out;
+}
+
+/* Phase 3: Edit complete – brief green flash then fade out */
+.ai-edit-done {
+    background: hsl(145 60% 50% / 0.12);
+    border-bottom: 2px solid hsl(145 60% 50% / 0.3);
+    border-radius: 2px;
+    animation: ai-edit-done-fade 2s ease-out forwards;
+}
+
+@keyframes ai-edit-fade-in {
+    from {
+        background: hsl(145 60% 50% / 0.3);
+    }
+
+    to {
+        background: hsl(145 60% 50% / 0.15);
+    }
+}
+
+@keyframes ai-edit-done-fade {
+    0% {
+        background: hsl(145 60% 50% / 0.15);
+        border-bottom-color: hsl(145 60% 50% / 0.3);
+    }
+
+    70% {
+        background: hsl(145 60% 50% / 0.08);
+        border-bottom-color: hsl(145 60% 50% / 0.15);
+    }
+
+    100% {
+        background: transparent;
+        border-bottom-color: transparent;
+    }
+}
